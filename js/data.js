@@ -115,6 +115,12 @@ function getProductDisplayName(product) {
   return String(product?.title || "").trim() || "—";
 }
 
+/** 一覧・検索用の発信者名（講師・チャンネル名） */
+function getProductProviderName(product) {
+  const name = String(product?.instructor || product?.companyName || "").trim();
+  return name || getProductDisplayName(product) || "—";
+}
+
 /** 公開画面用の投稿者表示名（匿名ユーザーIDサフィックスを除去） */
 function normalizeReviewerDisplayName(name) {
   const raw = String(name || "").trim();
