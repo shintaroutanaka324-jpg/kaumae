@@ -8,11 +8,11 @@
   };
 
   const EDITABLE_BODY_FIELDS = [
-    { key: "body_pros", label: "良かった点・満足した点", minChars: 150, rows: 5 },
-    { key: "body_concerns", label: "気になった点・改善してほしい点", minChars: 80, rows: 4 },
-    { key: "body_before", label: "受講前・利用前の状態", minChars: 80, rows: 4 },
-    { key: "body_results", label: "受講後・利用後の変化", minChars: 150, rows: 5 },
-    { key: "body_recommend", label: "どんな人におすすめしたいか", minChars: 80, rows: 4 },
+    { key: "body_pros", label: "良かった点・満足した点", minChars: 100, rows: 5 },
+    { key: "body_concerns", label: "気になった点・改善してほしい点", minChars: 30, rows: 4 },
+    { key: "body_before", label: "受講前・利用前の状態", minChars: 50, rows: 4 },
+    { key: "body_results", label: "受講後・利用後の変化", minChars: 50, rows: 5 },
+    { key: "body_recommend", label: "どんな人におすすめしたいか", minChars: 50, rows: 4 },
     { key: "numeric_results", label: "数値で表せる成果", optional: true, rows: 3 },
     { key: "body_other", label: "その他", optional: true, rows: 3 },
   ];
@@ -29,7 +29,8 @@
   const editableRowsById = new Map();
 
   function formatPeriod(row) {
-    if (!row.purchase_year || !row.purchase_month) return "—";
+    if (!row.purchase_year) return "—";
+    if (!row.purchase_month) return `${row.purchase_year}年頃`;
     return `${row.purchase_year}年${row.purchase_month}月頃`;
   }
 
@@ -40,6 +41,72 @@
       unknown: "不明・記載なし",
     };
     return map[value] || "—";
+  }
+
+  function isPurchaseProofShownPublicly(row) {
+    if (row?.show_purchase_proof === true) return true;
+    if (row?.show_purchase_proof === false) return false;
+    return Boolean(row?.purchase_proof_path);
+  }
+
+  function getPurchaseProofDisplayChoice(row) {
+    return isPurchaseProofShownPublicly(row) ? "yes" : "no";
+  }
+
+  function renderPurchaseProofDisplayField(row) {
+    if (row._isStatic) return "";
+
+    const hasFile = Boolean(row.purchase_proof_path);
+    const current = getPurchaseProofDisplayChoice(row);
+
+    if (!hasFile) {
+      return `
+        <div class="admin-field admin-field--proof-display">
+          <span class="form-label">購入証明の公開表示</span>
+          <p class="admin-card-meta">ファイル未提出のため、サイト上は「なし」と表示されます。</p>
+        </div>`;
+    }
+
+    return `
+      <div class="admin-field admin-field--proof-display">
+        <fieldset class="adm-proof-display-field">
+          <legend class="form-label">購入証明の公開表示</legend>
+          <p class="form-hint">提出ファイルを確認のうえ、サイト上の「購入証明あり」バッジ・詳細の「あり/なし」表示を選んでください。</p>
+          <div class="adm-proof-display-options">
+            <label class="adm-proof-display-option">
+              <input type="radio" name="show-purchase-proof-${row.id}" value="yes" ${current === "yes" ? "checked" : ""} />
+              <span class="adm-proof-display-option-label">あり（購入証明済みバッジを表示）</span>
+            </label>
+            <label class="adm-proof-display-option">
+              <input type="radio" name="show-purchase-proof-${row.id}" value="no" ${current === "no" ? "checked" : ""} />
+              <span class="adm-proof-display-option-label">なし（バッジ・記載を非表示）</span>
+            </label>
+          </div>
+        </fieldset>
+      </div>`;
+  }
+
+  function renderPurchaseProofAdminMeta(row) {
+    if (row._isStatic) return "";
+
+    const hasFile = Boolean(row.purchase_proof_path);
+    const shown = isPurchaseProofShownPublicly(row);
+
+    return `
+      <div class="adm-proof-admin-meta">
+        <h4 class="adm-detail-section-title">購入証明</h4>
+        <p class="admin-card-meta">
+          提出ファイル:
+          ${hasFile ? "あり" : "なし"}
+          · 公開表示:
+          <strong>${shown ? "あり" : "なし"}</strong>
+        </p>
+        ${
+          hasFile
+            ? `<button type="button" class="admin-proof-link" data-proof-path="${App.escapeHtml(row.purchase_proof_path)}">提出ファイルを表示</button>`
+            : ""
+        }
+      </div>`;
   }
 
   function getBodyFieldValue(row, key) {
@@ -325,9 +392,11 @@
             const dateStr = formatDateJa(row.created_at.split("T")[0]);
             const proofIcon = row._isStatic
               ? "—"
-              : row.purchase_proof_path
-                ? '<span class="adm-proof-yes" title="購入証明あり">✓</span>'
-                : '<span class="adm-proof-no" title="未提出">—</span>';
+              : !row.purchase_proof_path
+                ? '<span class="adm-proof-no" title="未提出">—</span>'
+                : isPurchaseProofShownPublicly(row)
+                  ? '<span class="adm-proof-yes" title="公開: 購入証明あり">✓</span>'
+                  : '<span class="adm-proof-held" title="ファイルあり・公開はなし">△</span>';
 
             return `<tr class="adm-table-row-clickable" data-open-review="${App.escapeHtml(String(row.id))}" tabindex="0">
               <td>
@@ -539,13 +608,7 @@
             <h4 class="adm-detail-section-title">口コミ本文</h4>
             ${showEditors ? renderBodyEditors(row, { postPublish: flags.showEditActions }) : renderBodyReadOnly(row)}
 
-            ${
-              !isStatic && row.purchase_proof_path
-                ? `<p style="margin-top:0.75rem"><button type="button" class="admin-proof-link" data-proof-path="${App.escapeHtml(row.purchase_proof_path)}">購入証明を表示</button></p>`
-                : !isStatic
-                  ? '<p class="admin-card-meta">購入証明: 未提出</p>'
-                  : ""
-            }
+            ${renderPurchaseProofAdminMeta(row)}
 
             ${row.rejection_reason ? `<p class="adm-warning-inline">却下理由: ${App.escapeHtml(row.rejection_reason)}</p>` : ""}
 
@@ -570,6 +633,7 @@
                   <label for="note-${row.id}">運営メモ（非公開）</label>
                   <textarea id="note-${row.id}" class="form-textarea adm-input-full" rows="2">${App.escapeHtml(row.admin_note || "")}</textarea>
                 </div>
+                ${renderPurchaseProofDisplayField(row)}
                 <div class="admin-field">
                   <label for="reject-${row.id}">却下理由</label>
                   <textarea id="reject-${row.id}" class="form-textarea adm-input-full" rows="2" placeholder="掲載基準に適合しない場合の理由"></textarea>
@@ -597,6 +661,7 @@
                   <label for="note-${row.id}">運営メモ（非公開）</label>
                   <textarea id="note-${row.id}" class="form-textarea adm-input-full" rows="2">${App.escapeHtml(row.admin_note || "")}</textarea>
                 </div>
+                ${renderPurchaseProofDisplayField(row)}
                 <div class="admin-actions">
                   <button type="button" class="adm-btn-primary" data-action="save-review" data-id="${row.id}">変更を保存</button>
                 </div>
@@ -652,6 +717,13 @@
           </div>
         </div>
       </div>`;
+  }
+
+  function collectShowPurchaseProof(reviewId) {
+    const row = editableRowsById.get(reviewId);
+    if (!row?.purchase_proof_path) return false;
+    const checked = document.querySelector(`input[name="show-purchase-proof-${reviewId}"]:checked`);
+    return checked?.value === "yes";
   }
 
   function collectEditedContent(reviewId) {
@@ -835,6 +907,7 @@
             adminNote,
             content,
             wasEdited: edited,
+            showPurchaseProof: collectShowPurchaseProof(id),
           });
           App.showToast(edited ? "内容を修正して公開しました" : "口コミを公開しました");
           invalidateKpiCache();
@@ -864,6 +937,7 @@
             adminNote,
             content,
             wasEdited: edited || productChanged,
+            showPurchaseProof: collectShowPurchaseProof(id),
           });
           App.showToast("口コミを更新しました");
           invalidateKpiCache();

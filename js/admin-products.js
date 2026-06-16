@@ -3,15 +3,13 @@
     title: "",
     instructor: "",
     category: "other",
-    price: "",
+    price: 0,
     platform: "",
     imageUrl: "",
     description: "",
     highlightPro: "",
     highlightCon: "",
     officialUrl: "",
-    supportPeriod: "3〜6ヶ月",
-    refundPolicy: "なし",
     isPublished: true,
   };
 
@@ -26,15 +24,10 @@
     title: "山本のWebマーケティング実践講座",
     instructor: "山本",
     category: "web-marketing",
-    price: "49800",
     platform: "オンライン講座",
     imageUrl: "",
     description:
       "SNSやLPの基礎から集客の流れまで学べる、実践型のマーケティング講座です。購入前に口コミで雰囲気を確認できます。",
-    highlightPro: "初学者でも始めやすいカリキュラム",
-    highlightCon: "成果には継続的な実践が必要",
-    supportPeriod: "3〜6ヶ月",
-    refundPolicy: "なし",
     officialUrl: "https://example.com/yamamoto-course",
   };
 
@@ -42,13 +35,8 @@
     { id: "ap-title", key: "title" },
     { id: "ap-instructor", key: "instructor" },
     { id: "ap-category", key: "category" },
-    { id: "ap-price", key: "price" },
     { id: "ap-platform", key: "platform" },
     { id: "ap-description", key: "description" },
-    { id: "ap-highlight-pro", key: "highlightPro", optional: true },
-    { id: "ap-highlight-con", key: "highlightCon", optional: true },
-    { id: "ap-support", key: "supportPeriod" },
-    { id: "ap-refund", key: "refundPolicy" },
     { id: "ap-official", key: "officialUrl", optional: true },
   ];
 
@@ -72,8 +60,6 @@
       highlightPro: product.highlightPro || "",
       highlightCon: product.highlightCon || "",
       officialUrl: product.officialUrl || "",
-      supportPeriod: product.supportPeriod || "3〜6ヶ月",
-      refundPolicy: product.refundPolicy || "なし",
       isPublished: product.isPublished !== false,
     };
   }
@@ -146,7 +132,7 @@
       .join("")}</div>`;
   }
 
-  function renderServiceTable(products) {
+  function renderServiceTable(products, pvStats = {}) {
     const filtered = filterProducts(products);
     const S = window.AdminDashboardStats;
 
@@ -154,7 +140,8 @@
       ? filtered
           .map((p) => {
             const published = isProductPublished(p);
-            const pv = S.estimatePv(p);
+            const pvInfo = S.getProductPvStats(pvStats, p.id);
+            const pv = pvInfo.monthlyPv || 0;
             const rating = p.averageRating || 0;
             const reviews = p.reviewCount || 0;
             const regDate = p.created_at
@@ -171,15 +158,14 @@
                 <div class="adm-table-service">
                   <img class="adm-table-thumb" src="${App.escapeHtml(p.imageUrl || ProductsApi?.DEFAULT_IMAGE || "")}" alt="" loading="lazy" />
                   <div>
-                    <div class="adm-table-name">${App.escapeHtml(p.title)}</div>
-                    <div class="adm-table-sub">${App.escapeHtml(p.instructor)}${p.source === "static" ? " · デモ" : ""}</div>
+                    <div class="adm-table-name adm-table-provider">${App.escapeHtml(p.instructor || p.companyName || "—")}${p.source === "static" ? '<span class="adm-table-tag">デモ</span>' : ""}</div>
                   </div>
                 </div>
               </td>
               <td><span class="adm-cat-pill">${App.escapeHtml(getCategoryLabel(p.category))}</span></td>
               <td>${reviews}</td>
               <td>${S.renderStars(rating)} <span style="color:#6b7280;font-size:0.75rem">${rating ? rating.toFixed(1) : "—"}</span></td>
-              <td><div class="adm-pv-cell">${pv.toLocaleString("ja-JP")}${S.sparklineSvg(p.id)}</div></td>
+              <td><div class="adm-pv-cell">${pv.toLocaleString("ja-JP")}${S.sparklineFromDaily(pvInfo.last8Days)}</div></td>
               <td>
                 <button type="button" class="adm-toggle ${published ? "is-on" : ""}" data-action="toggle-product" data-id="${App.escapeHtml(p.id)}" data-static="${p.source === "static" ? "1" : "0"}" data-published="${published}" aria-label="${toggleTitle}" title="${toggleTitle}"></button>
               </td>
@@ -219,11 +205,11 @@
           <table class="adm-table">
             <thead>
               <tr>
-                <th>サービス</th>
+                <th>提供者</th>
                 <th>カテゴリ</th>
                 <th>口コミ</th>
                 <th>評価</th>
-                <th>PV</th>
+                <th>月間PV</th>
                 <th>公開</th>
                 <th>登録日</th>
                 <th>操作</th>
@@ -242,7 +228,7 @@
     return `
       <div class="admin-product-grid">
         <div class="admin-field">
-          <label for="ap-title">サービス名 *</label>
+          <label for="ap-title">名称 *</label>
           <input type="text" id="ap-title" class="form-input" required value="${App.escapeHtml(form.title)}" />
         </div>
         <div class="admin-field">
@@ -254,15 +240,11 @@
           <select id="ap-category" class="form-input">${categoryOptions(form.category)}</select>
         </div>
         <div class="admin-field">
-          <label for="ap-price">価格（円） *</label>
-          <input type="number" id="ap-price" class="form-input" required min="0" value="${form.price !== "" ? App.escapeHtml(String(form.price)) : ""}" />
-        </div>
-        <div class="admin-field">
           <label for="ap-platform">販売プラットフォーム</label>
           <input type="text" id="ap-platform" class="form-input" value="${App.escapeHtml(form.platform)}" />
         </div>
         <div class="admin-field admin-field--full">
-          <label class="form-label">サービス画像</label>
+          <label class="form-label">画像</label>
           <div class="adm-image-upload">
             <img
               id="ap-image-preview"
@@ -282,28 +264,13 @@
           <input type="hidden" id="ap-image-url" value="${App.escapeHtml(form.imageUrl || "")}" />
         </div>
         <div class="admin-field admin-field--full">
-          <label for="ap-description">サービス説明</label>
+          <label for="ap-description">説明</label>
           <textarea id="ap-description" class="form-textarea" rows="3">${App.escapeHtml(form.description)}</textarea>
-        </div>
-        <div class="admin-field">
-          <label for="ap-highlight-pro">良い点</label>
-          <input type="text" id="ap-highlight-pro" class="form-input" value="${App.escapeHtml(form.highlightPro)}" />
-        </div>
-        <div class="admin-field">
-          <label for="ap-highlight-con">気になる点</label>
-          <input type="text" id="ap-highlight-con" class="form-input" value="${App.escapeHtml(form.highlightCon)}" />
-        </div>
-        <div class="admin-field">
-          <label for="ap-support">サポート期間</label>
-          <input type="text" id="ap-support" class="form-input" value="${App.escapeHtml(form.supportPeriod)}" />
-        </div>
-        <div class="admin-field">
-          <label for="ap-refund">返金ポリシー</label>
-          <input type="text" id="ap-refund" class="form-input" value="${App.escapeHtml(form.refundPolicy)}" />
         </div>
         <div class="admin-field admin-field--full">
           <label for="ap-official">公式URL</label>
-          <input type="url" id="ap-official" class="form-input" value="${App.escapeHtml(form.officialUrl)}" />
+          <input type="url" id="ap-official" class="form-input" placeholder="https://example.com" value="${App.escapeHtml(form.officialUrl)}" />
+          <p class="form-hint">https:// から始まるURLを入力してください（未入力の場合、詳細ページに「公式サイトを見る」は表示されません）。</p>
         </div>
       </div>
       <label class="admin-checkbox">
@@ -321,7 +288,7 @@
       <div class="adm-modal-backdrop" id="adm-modal-backdrop">
         <div class="adm-modal" role="dialog" aria-modal="true">
           <div class="adm-modal-head">
-            <h2 class="adm-modal-title">${isEdit ? "サービスを編集" : "新規サービス登録"}</h2>
+            <h2 class="adm-modal-title">${isEdit ? "編集" : "新規登録"}</h2>
             <button type="button" class="adm-modal-close" id="ap-modal-close" aria-label="閉じる">×</button>
           </div>
           <div class="adm-modal-body">
@@ -329,7 +296,7 @@
             <form id="admin-product-form" novalidate>
               ${renderFormFields(form)}
               <div class="admin-actions" style="margin-top:1rem">
-                <button type="submit" class="adm-btn-primary">${isEdit ? "変更を保存" : "サービスを追加"}</button>
+                <button type="submit" class="adm-btn-primary">${isEdit ? "変更を保存" : "追加"}</button>
                 <button type="button" class="adm-btn-ghost" id="ap-cancel-edit">キャンセル</button>
               </div>
             </form>
@@ -384,23 +351,25 @@
       title: document.getElementById("ap-title")?.value.trim() || "",
       instructor: document.getElementById("ap-instructor")?.value.trim() || "",
       category: document.getElementById("ap-category")?.value || "other",
-      price: document.getElementById("ap-price")?.value,
+      price: 0,
       platform: document.getElementById("ap-platform")?.value.trim() || "",
       imageUrl: document.getElementById("ap-image-url")?.value.trim() || "",
       description: document.getElementById("ap-description")?.value.trim() || "",
-      highlightPro: document.getElementById("ap-highlight-pro")?.value.trim() || "",
-      highlightCon: document.getElementById("ap-highlight-con")?.value.trim() || "",
-      officialUrl: document.getElementById("ap-official")?.value.trim() || "",
-      supportPeriod: document.getElementById("ap-support")?.value.trim() || "3〜6ヶ月",
-      refundPolicy: document.getElementById("ap-refund")?.value.trim() || "なし",
+      highlightPro: "",
+      highlightCon: "",
+      officialUrl:
+        (typeof ProductsApi?.normalizeExternalUrl === "function"
+          ? ProductsApi.normalizeExternalUrl(document.getElementById("ap-official")?.value)
+          : document.getElementById("ap-official")?.value.trim()) || "",
+      supportPeriod: "",
+      refundPolicy: "",
       isPublished: document.getElementById("ap-published")?.checked !== false,
     };
   }
 
   function validateForm(data) {
-    if (!data.title) return "サービス名を入力してください";
+    if (!data.title) return "名称を入力してください";
     if (!data.instructor) return "講師・発信者名を入力してください";
-    if (data.price === "" || Number(data.price) < 0) return "価格を入力してください";
     return null;
   }
 
@@ -456,7 +425,7 @@
         App.showToast(error.message, "error");
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = editingId ? "変更を保存" : "サービスを追加";
+          submitBtn.textContent = editingId ? "変更を保存" : "追加";
         }
       }
     });
@@ -583,22 +552,23 @@
     try {
       const { products, dbError } = await fetchAdminProducts();
       cachedProducts = products;
-      const kpis = await window.AdminDashboardStats.computeKpis(products);
+      const pvStats = await window.AdminDashboardStats.loadPvStats();
+      const kpis = await window.AdminDashboardStats.computeKpis(products, pvStats);
 
       let warning = "";
       if (dbError?.message?.includes("products") || dbError?.message?.includes("relation")) {
-        warning = `<div class="adm-warning-banner">DB未設定: <code>schema-products.sql</code> を実行してください。デモデータのみ表示中。</div>`;
+        warning = `<div class="adm-warning-banner">DB未設定: <code>schema-products.sql</code> を実行してください。</div>`;
       }
 
       const actionsEl = document.getElementById("adm-page-actions");
       if (actionsEl) {
-        actionsEl.innerHTML = `<button type="button" class="adm-btn-primary" id="ap-show-create-form">＋ 新規サービス</button>`;
+        actionsEl.innerHTML = `<button type="button" class="adm-btn-primary" id="ap-show-create-form">＋ 新規登録</button>`;
       }
 
       root.innerHTML = `
         ${warning}
         ${renderKpiRow(kpis)}
-        <div class="adm-services-main">${renderServiceTable(products)}</div>`;
+        <div class="adm-services-main">${renderServiceTable(products, pvStats)}</div>`;
 
       bindListEvents(root, products);
       document.getElementById("ap-show-create-form")?.addEventListener("click", () => {

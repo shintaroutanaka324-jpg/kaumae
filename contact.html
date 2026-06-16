@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>お問い合わせ | カウマエ</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260613chrome" />
 </head>
 <body>
   <div id="site-header"></div>
@@ -42,7 +42,7 @@
           <label class="form-label" for="message">お問い合わせ内容 *</label>
           <textarea class="form-textarea" id="message" required rows="8" placeholder="お問い合わせ内容をご記入ください"></textarea>
         </div>
-        <button type="submit" class="btn btn-trust btn-block btn-lg">送信する</button>
+        <button type="submit" class="btn btn-trust btn-block btn-lg" id="contact-submit">送信する</button>
       </form>
       </div>
     </div>
@@ -51,18 +51,43 @@
   <div id="site-footer"></div>
 
   <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/contact-api.js"></script>
+  <script src="js/app.js?v=20260613adminmenu"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+      await App.whenReady();
+
       App.renderBreadcrumb([
         { label: "トップ", path: "index.html" },
         { label: "お問い合わせ" },
       ]);
 
-      document.getElementById("contact-form").addEventListener("submit", (e) => {
+      const form = document.getElementById("contact-form");
+      const submitBtn = document.getElementById("contact-submit");
+
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        App.showToast("お問い合わせを送信しました。ご返信までしばらくお待ちください。");
-        e.target.reset();
+        submitBtn.disabled = true;
+        const original = submitBtn.textContent;
+        submitBtn.textContent = "送信中...";
+
+        try {
+          await ContactApi.submitInquiry({
+            name: document.getElementById("name").value,
+            email: document.getElementById("email").value,
+            subject: document.getElementById("subject").value,
+            message: document.getElementById("message").value,
+          });
+          App.showToast("お問い合わせを送信しました。ご返信までしばらくお待ちください。");
+          form.reset();
+        } catch (err) {
+          App.showToast(err.message || "送信に失敗しました", "error");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = original;
+        }
       });
     });
   </script>

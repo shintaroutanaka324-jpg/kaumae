@@ -15,8 +15,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    await Auth.ensureProfile?.();
+
     if (!Auth.isAdmin()) {
-      app.innerHTML = `<div class="adm-empty-state" style="padding:4rem">運営者権限が必要です。<br><a href="index.html">トップへ</a></div>`;
+      app.innerHTML = `<div class="adm-empty-state" style="padding:4rem">運営者権限が必要です。<br>Supabase の <code>profiles</code> テーブルで <code>is_admin = true</code> が設定されているか確認してください。<br><a href="index.html">トップへ</a></div>`;
       return;
     }
 

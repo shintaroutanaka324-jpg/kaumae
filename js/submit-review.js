@@ -12,6 +12,12 @@ const REFUND_GUARANTEE_OPTIONS = [
   { value: "unknown", label: "わからない・記載がなかった" },
 ];
 
+const PROOF_MAX_BYTES = 10 * 1024 * 1024;
+const PROOF_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp,.gif";
+
+let proofPreviewUrl = null;
+
 const RATING_ITEMS = [
   { key: "costPerformance", label: "コスパ", desc: "価格に見合った内容か", icon: "coin" },
   { key: "recommendation", label: "難易度・継続", desc: "続けやすさ・学びやすさ", icon: "repeat" },
@@ -25,7 +31,7 @@ const BODY_ITEMS = [
     id: "bodyPros",
     label: "良かった点・満足した点",
     shortLabel: "良かった点",
-    minChars: 150,
+    minChars: 100,
     required: true,
     description: "受講・利用して良かった点や満足した点を、具体的なエピソードを交えて書いてください。",
     placeholder:
@@ -36,7 +42,7 @@ const BODY_ITEMS = [
     id: "bodyConcerns",
     label: "気になった点・改善してほしい点",
     shortLabel: "気になった点",
-    minChars: 80,
+    minChars: 30,
     required: true,
     description: "受講・利用して気になった点や、改善してほしいと感じた点を書いてください。",
     placeholder:
@@ -47,7 +53,7 @@ const BODY_ITEMS = [
     id: "bodyBefore",
     label: "受講前・利用前の状態",
     shortLabel: "受講前・利用前の状態",
-    minChars: 80,
+    minChars: 50,
     required: true,
     description: "受講・利用する前に、どのような悩み・課題・不安があったかを書いてください。",
     placeholder: "例）受講前は、何から学べばよいか分からず、独学で何度も挫折していました。",
@@ -57,7 +63,7 @@ const BODY_ITEMS = [
     id: "bodyResults",
     label: "受講後・利用後の変化",
     shortLabel: "受講後・利用後の変化",
-    minChars: 150,
+    minChars: 50,
     required: true,
     description: "受講・利用した後に、どのような成果・変化・気づきがあったかを書いてください。",
     placeholder:
@@ -68,7 +74,7 @@ const BODY_ITEMS = [
     id: "bodyRecommend",
     label: "どんな人におすすめしたいか",
     shortLabel: "おすすめしたい人",
-    minChars: 80,
+    minChars: 50,
     required: true,
     description: "このサービスをどのような人におすすめできるか、理由とあわせて書いてください。",
     placeholder:
@@ -106,6 +112,10 @@ const BODY_ITEMS = [
 
 const REQUIRED_BODY_ITEMS = BODY_ITEMS.filter((item) => item.required);
 
+const REVIEW_DRAFT_VERSION = 1;
+const REVIEW_DRAFT_DEBOUNCE_MS = 1500;
+let draftSaveTimer = null;
+
 const ITEM_ICONS = {
   coin: '<path d="M12 4v16M8 8a4 4 0 1 0 8 0 4 4 0 0 0-8 0z"/>',
   repeat:
@@ -142,21 +152,6 @@ function getMinCharsForItem(item) {
   return item?.minChars ?? 0;
 }
 
-const MONTH_OPTIONS = [
-  { value: "1", label: "1月" },
-  { value: "2", label: "2月" },
-  { value: "3", label: "3月" },
-  { value: "4", label: "4月" },
-  { value: "5", label: "5月" },
-  { value: "6", label: "6月" },
-  { value: "7", label: "7月" },
-  { value: "8", label: "8月" },
-  { value: "9", label: "9月" },
-  { value: "10", label: "10月" },
-  { value: "11", label: "11月" },
-  { value: "12", label: "12月" },
-];
-
 function countChars(value) {
   return window.ReviewQuality?.countChars?.(value) ?? [...String(value || "")].length;
 }
@@ -188,15 +183,9 @@ function renderPurchasePeriodFields() {
           ${years.map((y) => `<option value="${y}">${y}年</option>`).join("")}
         </select>
       </div>
-      <div class="sr-period-field">
-        <select class="select" id="purchaseMonth" required aria-label="購入月">
-          <option value="">月を選択</option>
-          ${MONTH_OPTIONS.map((m) => `<option value="${m.value}">${m.label}</option>`).join("")}
-        </select>
-      </div>
       <span class="sr-period-suffix">頃</span>
     </div>
-    <p class="form-hint">おおよその時期で構いません</p>`;
+    <p class="form-hint">おおよその購入年で構いません</p>`;
 }
 
 function renderItemIcon(item) {
@@ -233,11 +222,21 @@ function renderStaticStars(count) {
   return `<span class="sr-scale-stars" aria-hidden="true">${html}</span>`;
 }
 
-function formatRatingStars(value) {
+function renderReadOnlyStars(value) {
   const v = Number(value);
-  const full = Math.floor(v);
-  const half = v % 1 >= 0.5;
-  return `${"★".repeat(full)}${half ? "⯨" : ""}${"☆".repeat(5 - full - (half ? 1 : 0))}（${v}）`;
+  const stars = [1, 2, 3, 4, 5]
+    .map((star) => {
+      const classes = ["sr-star", "sr-star--readonly"];
+      if (v >= star) classes.push("is-full");
+      else if (v >= star - 0.5) classes.push("is-half");
+      return `<span class="${classes.join(" ")}" aria-hidden="true"><span class="sr-star-fill">★</span></span>`;
+    })
+    .join("");
+  return `<span class="sr-stars sr-stars--readonly" aria-label="${v}つ星">${stars}</span><span class="sr-confirm-rating-val">（${v}）</span>`;
+}
+
+function formatRatingStars(value) {
+  return renderReadOnlyStars(value);
 }
 
 function refundGuaranteeLabel(value) {
@@ -348,7 +347,8 @@ function renderSidebar() {
           <li>実際に購入・受講した商品・サービスのみ投稿できます</li>
           <li>口コミを1件投稿すると、<strong>1か月間</strong>すべての口コミを閲覧できます</li>
           <li>購入証明の提出は任意です（提出で「購入証明済み」バッジ）</li>
-          <li>口コミ本文は「受講前の状態 → 受講後の変化 → おすすめできる人」が伝わるよう、項目ごとに<strong>最低80〜150文字</strong>で記載してください</li>
+          <li>入力途中の内容は<strong>一時保存</strong>でき、次回アクセス時に自動で復元されます（購入証明ファイルは除く）</li>
+          <li>口コミ本文は「受講前の状態 → 受講後の変化 → おすすめできる人」が伝わるよう記載してください（良かった点は<strong>最低100文字</strong>、受講前・受講後の変化・おすすめしたい人は<strong>最低50文字</strong>、気になった点は<strong>最低30文字</strong>）</li>
         </ul>
         <a href="submit-guidelines.html" class="sr-side-guide-link">口コミ投稿ガイドラインを見る →</a>
       </div>
@@ -376,11 +376,220 @@ function renderSidebar() {
     </aside>`;
 }
 
+function getReviewDraftStorageKey() {
+  const userId = window.Auth?.getUser?.()?.id;
+  return userId ? `review-draft-v${REVIEW_DRAFT_VERSION}-${userId}` : "review-draft-v1-guest";
+}
+
+function collectDraftSnapshot() {
+  const refundEl = document.querySelector('input[name="hasRefundGuarantee"]:checked');
+  const snapshot = {
+    serviceName: document.getElementById("serviceName")?.value || "",
+    sellerName: document.getElementById("sellerName")?.value || "",
+    purchasePrice: document.getElementById("purchasePrice")?.value || "",
+    purchaseYear: document.getElementById("purchaseYear")?.value || "",
+    hasRefundGuarantee: refundEl?.value || "",
+    ratings: Object.fromEntries(
+      RATING_ITEMS.map((item) => [item.key, document.getElementById(item.key)?.value || ""])
+    ),
+    bodies: Object.fromEntries(
+      BODY_ITEMS.map((item) => [item.id, document.getElementById(item.id)?.value || ""])
+    ),
+  };
+  return snapshot;
+}
+
+function isDraftSnapshotEmpty(snapshot) {
+  if (!snapshot) return true;
+  if (snapshot.serviceName?.trim()) return false;
+  if (snapshot.sellerName?.trim()) return false;
+  if (snapshot.purchasePrice?.trim()) return false;
+  if (snapshot.purchaseYear) return false;
+  if (snapshot.hasRefundGuarantee) return false;
+  if (Object.values(snapshot.ratings || {}).some((v) => Number(v) > 0)) return false;
+  return !Object.values(snapshot.bodies || {}).some((v) => String(v || "").trim());
+}
+
+function formatDraftSavedAt(iso) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${y}/${m}/${d} ${hh}:${mm}`;
+}
+
+function updateDraftStatusUI(savedAt, { restored = false } = {}) {
+  const statusEl = document.getElementById("sr-draft-status");
+  const clearBtn = document.getElementById("sr-draft-clear");
+  if (!statusEl) return;
+
+  if (!savedAt) {
+    statusEl.hidden = true;
+    statusEl.textContent = "";
+    clearBtn?.classList.add("hidden");
+    return;
+  }
+
+  const label = formatDraftSavedAt(savedAt);
+  statusEl.hidden = false;
+  statusEl.textContent = restored
+    ? `下書きを復元しました（${label} 保存）`
+    : `${label} に一時保存しました`;
+  clearBtn?.classList.remove("hidden");
+}
+
+function saveReviewDraft({ silent = false, restored = false } = {}) {
+  const snapshot = collectDraftSnapshot();
+  if (isDraftSnapshotEmpty(snapshot)) {
+    if (!silent) {
+      window.App?.showToast?.("保存する内容がありません", "error");
+    }
+    return false;
+  }
+
+  const savedAt = new Date().toISOString();
+  const payload = {
+    version: REVIEW_DRAFT_VERSION,
+    savedAt,
+    data: snapshot,
+  };
+
+  try {
+    localStorage.setItem(getReviewDraftStorageKey(), JSON.stringify(payload));
+    updateDraftStatusUI(savedAt, { restored });
+    if (!silent && !restored) {
+      window.App?.showToast?.("入力内容を一時保存しました");
+    }
+    return true;
+  } catch (err) {
+    if (!silent) {
+      window.App?.showToast?.("一時保存に失敗しました。ブラウザの保存容量を確認してください。", "error");
+    }
+    console.warn("[カウマエ] 口コミ下書き保存エラー", err);
+    return false;
+  }
+}
+
+function loadReviewDraft() {
+  try {
+    const raw = localStorage.getItem(getReviewDraftStorageKey());
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.version !== REVIEW_DRAFT_VERSION || !parsed.data) return null;
+    if (isDraftSnapshotEmpty(parsed.data)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearReviewDraft() {
+  localStorage.removeItem(getReviewDraftStorageKey());
+  updateDraftStatusUI(null);
+}
+
+function setRatingDisplay(ratingKey, value) {
+  const container = document.querySelector(`.sr-stars[data-rating-name="${ratingKey}"]`);
+  const hidden = document.getElementById(ratingKey);
+  if (!container || !hidden) return;
+
+  const num = Number(value) || 0;
+  container.querySelectorAll(".sr-star").forEach((btn) => {
+    const star = Number(btn.dataset.star);
+    btn.classList.toggle("is-half", num >= star - 0.5 && num < star);
+    btn.classList.toggle("is-full", num >= star);
+  });
+  hidden.value = num || "";
+}
+
+function applyReviewDraft(draft) {
+  const data = draft?.data;
+  if (!data) return false;
+
+  const serviceName = document.getElementById("serviceName");
+  const sellerName = document.getElementById("sellerName");
+  const purchasePrice = document.getElementById("purchasePrice");
+  const purchaseYear = document.getElementById("purchaseYear");
+
+  if (serviceName) serviceName.value = data.serviceName || "";
+  if (sellerName) sellerName.value = data.sellerName || "";
+  if (purchasePrice) purchasePrice.value = data.purchasePrice || "";
+  if (purchaseYear) purchaseYear.value = data.purchaseYear || "";
+
+  if (data.hasRefundGuarantee) {
+    const refundInput = document.querySelector(
+      `input[name="hasRefundGuarantee"][value="${data.hasRefundGuarantee}"]`
+    );
+    if (refundInput) refundInput.checked = true;
+  }
+
+  RATING_ITEMS.forEach((item) => {
+    setRatingDisplay(item.key, data.ratings?.[item.key] || 0);
+  });
+
+  BODY_ITEMS.forEach((item) => {
+    const textarea = document.getElementById(item.id);
+    if (!textarea) return;
+    textarea.value = data.bodies?.[item.id] || "";
+    updateTextareaState(textarea);
+  });
+
+  validateForm();
+  updateDraftStatusUI(draft.savedAt, { restored: true });
+  return true;
+}
+
+function scheduleDraftAutosave() {
+  if (draftSaveTimer) window.clearTimeout(draftSaveTimer);
+  draftSaveTimer = window.setTimeout(() => {
+    saveReviewDraft({ silent: true });
+  }, REVIEW_DRAFT_DEBOUNCE_MS);
+}
+
+function initDraftFeature() {
+  const saveBtn = document.getElementById("sr-draft-save");
+  const clearBtn = document.getElementById("sr-draft-clear");
+  const form = document.getElementById("review-form");
+  if (!form) return;
+
+  const existing = loadReviewDraft();
+  if (existing) {
+    applyReviewDraft(existing);
+    window.App?.showToast?.("前回の下書きを復元しました");
+  }
+
+  saveBtn?.addEventListener("click", () => {
+    saveReviewDraft({ silent: false });
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    if (!loadReviewDraft()) return;
+    if (!window.confirm("保存した下書きを削除しますか？")) return;
+    clearReviewDraft();
+    window.App?.showToast?.("下書きを削除しました");
+  });
+
+  form
+    .querySelectorAll(
+      "#serviceName, #sellerName, #purchasePrice, #purchaseYear, .sr-textarea, input[name='hasRefundGuarantee']"
+    )
+    .forEach((el) => {
+      el.addEventListener("input", scheduleDraftAutosave);
+      el.addEventListener("change", scheduleDraftAutosave);
+    });
+
+  document.querySelectorAll(".sr-stars .sr-star").forEach((btn) => {
+    btn.addEventListener("click", scheduleDraftAutosave);
+  });
+}
+
 function collectFormData() {
   const proofInput = document.getElementById("purchaseProof");
   const year = document.getElementById("purchaseYear")?.value;
-  const month = document.getElementById("purchaseMonth")?.value;
-  const monthLabel = MONTH_OPTIONS.find((m) => m.value === month)?.label || "";
 
   const refundEl = document.querySelector('input[name="hasRefundGuarantee"]:checked');
 
@@ -390,8 +599,11 @@ function collectFormData() {
     productName: document.getElementById("serviceName")?.value.trim() || "",
     hasRefundGuarantee: refundEl?.value || "",
     purchasePrice: document.getElementById("purchasePrice")?.value || "",
-    purchasePeriod: year && month ? `${year}年${monthLabel}頃` : "",
-    purchaseProofName: proofInput?.files?.[0]?.name || "未提出",
+    purchasePeriod: year ? `${year}年頃` : "",
+    purchaseProofName: proofInput?.files?.[0]?.name || "",
+    purchaseProofAttached: Boolean(proofInput?.files?.[0]),
+    purchaseProofKind: getProofFileMeta(proofInput?.files?.[0])?.kindLabel || "",
+    purchaseProofSize: proofInput?.files?.[0] ? formatProofFileSize(proofInput.files[0].size) : "",
     ratings: RATING_ITEMS.map((item) => ({
       key: item.key,
       label: item.label,
@@ -420,7 +632,7 @@ function renderConfirmScreen(data) {
             <div><dt>購入価格</dt><dd>${App.escapeHtml(Number(data.purchasePrice).toLocaleString())}円</dd></div>
             <div><dt>購入時期</dt><dd>${App.escapeHtml(data.purchasePeriod)}</dd></div>
             <div><dt>返金保証</dt><dd>${App.escapeHtml(refundGuaranteeLabel(data.hasRefundGuarantee))}</dd></div>
-            <div><dt>購入証明</dt><dd>${App.escapeHtml(data.purchaseProofName)}</dd></div>
+            <div><dt>購入証明</dt><dd>${renderConfirmProofSummary(data)}</dd></div>
           </dl>
         </div>
 
@@ -510,6 +722,7 @@ async function submitReview() {
         "success"
       );
     }
+    clearReviewDraft();
     setTimeout(() => (window.location.href = "my-reviews.html"), 1400);
   } catch (err) {
     App.showToast(err.message || "投稿に失敗しました", "error");
@@ -590,19 +803,40 @@ document.addEventListener("DOMContentLoaded", async () => {
               </div>
               ${renderRefundGuaranteeField()}
               <div class="form-group sr-info-proof">
-                <label class="form-label" for="purchaseProof">購入証明</label>
-                <label class="sr-upload" for="purchaseProof">
-                  <span class="sr-upload-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                      <path d="M12 16V4m0 0 7 7m-7-7 7 7"/>
-                      <path d="M4 20h16"/>
-                    </svg>
-                  </span>
-                  <span class="sr-upload-title">ファイルを選択</span>
-                  <span class="sr-upload-hint">領収書・契約画面・決済メールなど</span>
-                  <span class="sr-upload-name" id="purchaseProof-name">未選択</span>
-                </label>
-                <input type="file" class="sr-upload-input" id="purchaseProof" accept="image/*,.pdf" />
+                <div class="sr-proof-head">
+                  <label class="form-label" for="purchaseProof">購入証明 <span class="sr-proof-optional">任意</span></label>
+                  <span class="sr-proof-status-badge sr-proof-status-badge--empty" id="purchaseProof-status">未添付</span>
+                </div>
+                <p class="form-hint sr-proof-hint">領収書・契約画面・決済メールなど（JPEG / PNG / WebP / PDF · 10MBまで）</p>
+                <div class="sr-proof-upload" id="purchaseProof-upload">
+                  <label class="sr-proof-dropzone" id="purchaseProof-dropzone" for="purchaseProof">
+                    <span class="sr-proof-dropzone-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <path d="M12 16V4m0 0 7 7m-7-7 7 7"/>
+                        <path d="M4 20h16"/>
+                      </svg>
+                    </span>
+                    <span class="sr-proof-dropzone-title">クリックしてファイルを選択</span>
+                    <span class="sr-proof-dropzone-hint">またはここにドラッグ＆ドロップ</span>
+                    <span class="sr-proof-dropzone-types">対応形式: 画像（JPG / PNG / WebP）· PDF</span>
+                  </label>
+                  <div class="sr-proof-attached hidden" id="purchaseProof-attached" aria-live="polite">
+                    <div class="sr-proof-file-card">
+                      <div class="sr-proof-thumb" id="purchaseProof-thumb" aria-hidden="true"></div>
+                      <div class="sr-proof-file-info">
+                        <span class="sr-proof-type" id="purchaseProof-type">—</span>
+                        <strong class="sr-proof-filename" id="purchaseProof-filename">—</strong>
+                        <span class="sr-proof-size" id="purchaseProof-size">—</span>
+                      </div>
+                      <button type="button" class="sr-proof-remove" id="purchaseProof-remove" aria-label="添付を解除">×</button>
+                    </div>
+                    <div class="sr-proof-actions">
+                      <label class="btn btn-sm btn-outline" for="purchaseProof">別のファイルを選ぶ</label>
+                    </div>
+                  </div>
+                  <p class="sr-proof-error hidden" id="purchaseProof-error" role="alert"></p>
+                  <input type="file" class="sr-upload-input" id="purchaseProof" accept="${PROOF_ACCEPT}" />
+                </div>
               </div>
             </div>
           </section>
@@ -620,7 +854,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               </div>
               <div class="sr-subsection sr-subsection--body">
                 <h3 class="sr-subsection-title">口コミ本文</h3>
-                <p class="sr-body-intro">購入検討者が「本当に買うべきか」を判断できるよう、<strong>受講前の状態 → 受講後の変化 → おすすめできる人</strong>が伝わる口コミをお願いします。</p>
                 <div class="sr-body-list">${renderBodyRows()}</div>
               </div>
             </div>
@@ -630,11 +863,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>
 
       <div id="sr-validation-errors" class="sr-validation-errors hidden" role="alert" aria-live="polite"></div>
+      <p class="sr-draft-status" id="sr-draft-status" hidden></p>
       <div class="sr-actions">
         <button type="submit" class="btn btn-trust btn-lg sr-submit-btn" id="submit-btn" disabled>
           入力内容を確認する
         </button>
-        <a href="reviews.html" class="btn btn-outline-trust btn-lg">キャンセル</a>
+        <button type="button" class="btn btn-outline-trust btn-lg" id="sr-draft-save">一時保存</button>
+        <button type="button" class="btn btn-ghost btn-lg sr-draft-clear hidden" id="sr-draft-clear">下書きを削除</button>
       </div>
       <p class="sr-footer-note">
         投稿された口コミは運営が確認のうえ公開されます。審査状況は<a href="my-reviews.html">投稿した口コミ</a>から確認できます。投稿は匿名で行われます。
@@ -646,16 +881,197 @@ document.addEventListener("DOMContentLoaded", async () => {
   initStarRatings();
   initCharCounters();
   initFormValidation();
+  initDraftFeature();
 });
+
+function formatProofFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getProofFileMeta(file) {
+  if (!file) return null;
+
+  const name = file.name || "ファイル";
+  const ext = name.split(".").pop()?.toLowerCase() || "";
+  const mime = (file.type || "").toLowerCase();
+
+  if (mime === "application/pdf" || ext === "pdf") {
+    return { kind: "pdf", kindLabel: "PDF", ext: "PDF" };
+  }
+  if (mime.startsWith("image/") || ["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) {
+    const extLabel = ext ? ext.toUpperCase() : "画像";
+    return { kind: "image", kindLabel: "画像", ext: extLabel };
+  }
+  return { kind: "file", kindLabel: "ファイル", ext: ext.toUpperCase() || "—" };
+}
+
+function isProofFileAllowed(file) {
+  const meta = getProofFileMeta(file);
+  return meta?.kind === "pdf" || meta?.kind === "image";
+}
+
+function renderProofThumbHtml(file, meta) {
+  if (meta.kind === "image") {
+    revokeProofPreview();
+    proofPreviewUrl = URL.createObjectURL(file);
+    return `<img src="${proofPreviewUrl}" alt="" class="sr-proof-thumb-img" />`;
+  }
+  if (meta.kind === "pdf") {
+    return `<span class="sr-proof-thumb-pdf">PDF</span>`;
+  }
+  return `<span class="sr-proof-thumb-file">FILE</span>`;
+}
+
+function renderConfirmProofSummary(data) {
+  if (!data.purchaseProofAttached) {
+    return `<span class="sr-confirm-proof sr-confirm-proof--no">未提出</span>`;
+  }
+  const kind = data.purchaseProofKind || "ファイル";
+  const size = data.purchaseProofSize ? ` · ${data.purchaseProofSize}` : "";
+  return `<span class="sr-confirm-proof sr-confirm-proof--yes">添付済み</span>
+    <span class="sr-confirm-proof-name">${App.escapeHtml(data.purchaseProofName)}</span>
+    <span class="sr-confirm-proof-meta">（${App.escapeHtml(kind)}${App.escapeHtml(size)}）</span>`;
+}
+
+function revokeProofPreview() {
+  if (proofPreviewUrl) {
+    URL.revokeObjectURL(proofPreviewUrl);
+    proofPreviewUrl = null;
+  }
+}
+
+function showProofError(message) {
+  const errorEl = document.getElementById("purchaseProof-error");
+  if (!errorEl) return;
+  if (message) {
+    errorEl.textContent = message;
+    errorEl.classList.remove("hidden");
+  } else {
+    errorEl.textContent = "";
+    errorEl.classList.add("hidden");
+  }
+}
+
+function clearProofAttachment() {
+  const input = document.getElementById("purchaseProof");
+  if (input) input.value = "";
+  revokeProofPreview();
+  updateProofUploadUI(null);
+}
+
+function updateProofUploadUI(file) {
+  const dropzone = document.getElementById("purchaseProof-dropzone");
+  const attached = document.getElementById("purchaseProof-attached");
+  const statusEl = document.getElementById("purchaseProof-status");
+  const typeEl = document.getElementById("purchaseProof-type");
+  const nameEl = document.getElementById("purchaseProof-filename");
+  const sizeEl = document.getElementById("purchaseProof-size");
+  const thumbEl = document.getElementById("purchaseProof-thumb");
+  const uploadRoot = document.getElementById("purchaseProof-upload");
+
+  if (!dropzone || !attached || !statusEl) return;
+
+  if (!file) {
+    dropzone.classList.remove("hidden");
+    attached.classList.add("hidden");
+    uploadRoot?.classList.remove("is-attached");
+    statusEl.textContent = "未添付";
+    statusEl.className = "sr-proof-status-badge sr-proof-status-badge--empty";
+    if (thumbEl) thumbEl.innerHTML = "";
+    return;
+  }
+
+  const meta = getProofFileMeta(file);
+
+  dropzone.classList.add("hidden");
+  attached.classList.remove("hidden");
+  uploadRoot?.classList.add("is-attached");
+
+  statusEl.textContent = "添付済み";
+  statusEl.className = "sr-proof-status-badge sr-proof-status-badge--attached";
+
+  if (typeEl) typeEl.textContent = `${meta.kindLabel}（${meta.ext}）`;
+  if (nameEl) {
+    nameEl.textContent = file.name;
+    nameEl.title = file.name;
+  }
+  if (sizeEl) sizeEl.textContent = formatProofFileSize(file.size);
+  if (thumbEl) thumbEl.innerHTML = renderProofThumbHtml(file, meta);
+}
+
+function applyProofFile(file) {
+  const input = document.getElementById("purchaseProof");
+  if (!file) {
+    clearProofAttachment();
+    return;
+  }
+
+  showProofError("");
+
+  if (!isProofFileAllowed(file)) {
+    showProofError("JPEG / PNG / WebP / PDF のみ添付できます。");
+    if (input) input.value = "";
+    updateProofUploadUI(null);
+    return;
+  }
+
+  if (file.size > PROOF_MAX_BYTES) {
+    showProofError(`ファイルサイズが大きすぎます（上限 ${formatProofFileSize(PROOF_MAX_BYTES)}）。`);
+    if (input) input.value = "";
+    updateProofUploadUI(null);
+    return;
+  }
+
+  updateProofUploadUI(file);
+}
 
 function initFileUpload() {
   const input = document.getElementById("purchaseProof");
-  const nameEl = document.getElementById("purchaseProof-name");
-  if (!input || !nameEl) return;
+  const uploadRoot = document.getElementById("purchaseProof-upload");
+  const removeBtn = document.getElementById("purchaseProof-remove");
+  if (!input) return;
 
   input.addEventListener("change", () => {
-    nameEl.textContent = input.files?.[0]?.name || "未選択";
+    const file = input.files?.[0] || null;
+    applyProofFile(file);
   });
+
+  removeBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearProofAttachment();
+    showProofError("");
+  });
+
+  if (!uploadRoot) return;
+
+  ["dragenter", "dragover"].forEach((eventName) => {
+    uploadRoot.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      uploadRoot.classList.add("is-dragover");
+    });
+  });
+
+  ["dragleave", "drop"].forEach((eventName) => {
+    uploadRoot.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      uploadRoot.classList.remove("is-dragover");
+    });
+  });
+
+  uploadRoot.addEventListener("drop", (e) => {
+    const file = e.dataTransfer?.files?.[0] || null;
+    if (!file) return;
+
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    applyProofFile(file);
+  });
+
+  updateProofUploadUI(null);
 }
 
 function initStarRatings() {
@@ -665,12 +1081,7 @@ function initStarRatings() {
     if (!hidden) return;
 
     const updateDisplay = (value) => {
-      container.querySelectorAll(".sr-star").forEach((btn) => {
-        const star = Number(btn.dataset.star);
-        btn.classList.toggle("is-half", value >= star - 0.5 && value < star);
-        btn.classList.toggle("is-full", value >= star);
-      });
-      hidden.value = value || "";
+      setRatingDisplay(name, value);
       validateForm();
     };
 
@@ -745,13 +1156,12 @@ function collectValidationErrors() {
   const hasRefundGuarantee = document.querySelector('input[name="hasRefundGuarantee"]:checked')?.value;
   const purchasePrice = document.getElementById("purchasePrice")?.value;
   const purchaseYear = document.getElementById("purchaseYear")?.value;
-  const purchaseMonth = document.getElementById("purchaseMonth")?.value;
 
   if (!serviceName) errors.push("サービス名を入力してください");
   if (!sellerName) errors.push("チャンネル・企業名を入力してください");
   if (!hasRefundGuarantee) errors.push("返金保証の有無を選択してください");
   if (purchasePrice === "" || Number(purchasePrice) < 0) errors.push("購入価格を入力してください");
-  if (!purchaseYear || !purchaseMonth) errors.push("購入時期を選択してください");
+  if (!purchaseYear) errors.push("購入年を選択してください");
 
   RATING_ITEMS.forEach((item) => {
     if (!Number(document.getElementById(item.key)?.value || 0)) {
@@ -813,7 +1223,7 @@ function validateForm(showErrors = false) {
 function initFormValidation() {
   const form = document.getElementById("review-form");
   form
-    .querySelectorAll("#serviceName, #sellerName, #purchasePrice, #purchaseYear, #purchaseMonth, .sr-textarea, input[name='hasRefundGuarantee']")
+    .querySelectorAll("#serviceName, #sellerName, #purchasePrice, #purchaseYear, .sr-textarea, input[name='hasRefundGuarantee']")
     .forEach((el) => {
       el.addEventListener("input", () => validateForm());
       el.addEventListener("change", () => validateForm());

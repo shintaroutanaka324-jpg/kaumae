@@ -11,6 +11,8 @@ create table if not exists public.profiles (
   stripe_customer_id text,
   stripe_subscription_id text,
   subscription_status text,
+  age_group text,
+  gender text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -37,11 +39,13 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, display_name, email)
+  insert into public.profiles (id, display_name, email, age_group, gender)
   values (
     new.id,
     coalesce(new.raw_user_meta_data ->> 'display_name', split_part(new.email, '@', 1)),
-    coalesce(new.email, '')
+    coalesce(new.email, ''),
+    nullif(trim(new.raw_user_meta_data ->> 'age_group'), ''),
+    nullif(trim(new.raw_user_meta_data ->> 'gender'), '')
   )
   on conflict (id) do nothing;
   return new;

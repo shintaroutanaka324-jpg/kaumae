@@ -22,7 +22,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       subscribeBtn.classList.add("btn-outline");
     }
     if (subscribeHint) {
-      subscribeHint.textContent = "サブスクリプションの管理は今後 Stripe Customer Portal で提供予定です。";
+      subscribeHint.innerHTML =
+        '解約・支払い方法の変更は <a href="account-settings.html">アカウント設定</a> から行えます。';
     }
     return;
   }

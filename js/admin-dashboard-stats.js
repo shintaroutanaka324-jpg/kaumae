@@ -14,22 +14,53 @@
     "#64748b",
   ];
 
-  function hashNum(str) {
-    let h = 0;
-    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
-    return Math.abs(h);
+  function getProductPvStats(pvStats, productId) {
+    return pvStats?.[productId] || { monthlyPv: 0, previousMonthPv: 0, last8Days: [] };
   }
 
-  function estimatePv(product) {
-    const base = (product.reviewCount || 0) * 142;
-    const bump = (hashNum(String(product.id)) % 900) + 100;
-    return base + bump;
+  function sparklineFromDaily(counts) {
+    const data = Array.isArray(counts) && counts.length ? counts : [0, 0, 0, 0, 0, 0, 0, 0];
+    const max = Math.max(...data, 1);
+    const lastIndex = Math.max(data.length - 1, 1);
+    const pts = data.map((value, index) => {
+      const x = Math.round((index / lastIndex) * 56);
+      const y = 20 - Math.round((value / max) * 14) - 2;
+      return `${x},${y}`;
+    });
+    return `<svg class="adm-sparkline" viewBox="0 0 56 20" aria-hidden="true"><polyline fill="none" stroke="currentColor" stroke-width="1.5" points="${pts.join(" ")}"/></svg>`;
+  }
+
+  async function loadPvStats() {
+    if (window.ProductPvApi?.loadAdminStats) {
+      return window.ProductPvApi.loadAdminStats();
+    }
+    return {};
+  }
+
+  function sumPvTotals(pvStats) {
+    return Object.values(pvStats || {}).reduce(
+      (acc, item) => {
+        acc.monthly += item.monthlyPv || 0;
+        acc.previous += item.previousMonthPv || 0;
+        return acc;
+      },
+      { monthly: 0, previous: 0 }
+    );
   }
 
   function formatDelta(value, suffix = "") {
     if (value > 0) return { text: `+${value}${suffix} 前月比`, cls: "is-up" };
     if (value < 0) return { text: `${value}${suffix} 前月比`, cls: "is-down" };
     return { text: "±0 前月比", cls: "is-neutral" };
+  }
+
+  function formatPvDelta(currentTotal, previousTotal) {
+    if (!previousTotal) {
+      if (currentTotal > 0) return formatDelta(100, "%");
+      return formatDelta(0, "%");
+    }
+    const pct = Math.round(((currentTotal - previousTotal) / previousTotal) * 100);
+    return formatDelta(pct, "%");
   }
 
   function formatRelativeTime(dateStr) {
@@ -55,16 +86,6 @@
     if (half) s += "☆";
     while (s.length < 5) s += "☆";
     return `<span class="adm-stars" title="${r.toFixed(1)}">${s}</span>`;
-  }
-
-  function sparklineSvg(id) {
-    const h = hashNum(String(id));
-    const pts = [];
-    for (let i = 0; i < 8; i++) {
-      const y = 4 + ((h >> (i * 3)) % 12);
-      pts.push(`${i * 8},${20 - y}`);
-    }
-    return `<svg class="adm-sparkline" viewBox="0 0 56 20" aria-hidden="true"><polyline fill="none" stroke="currentColor" stroke-width="1.5" points="${pts.join(" ")}"/></svg>`;
   }
 
   function getReviewsList() {
@@ -110,11 +131,11 @@
     }
   }
 
-  async function computeKpis(products) {
+  async function computeKpis(products, pvStats = {}) {
     const reviews = getReviewsList();
     const userCount = await fetchUserCount();
     const published = products.filter((p) => p.isPublished !== false).length;
-    const totalPv = products.reduce((sum, p) => sum + estimatePv(p), 0);
+    const pvTotals = sumPvTotals(pvStats);
 
     const ratings = products.map((p) => p.averageRating).filter((n) => n > 0);
     reviews.forEach((r) => {
@@ -136,9 +157,9 @@
       reviews: { value: reviews.length, sub: `今月 +${reviewsThisMonth}件`, delta: formatDelta(12, "%") },
       users: { value: userCount, sub: "登録ユーザー", delta: formatDelta(8, "%") },
       monthlyPv: {
-        value: totalPv.toLocaleString("ja-JP"),
-        sub: "推定PV",
-        delta: formatDelta(15, "%"),
+        value: pvTotals.monthly.toLocaleString("ja-JP"),
+        sub: "今月のPV",
+        delta: formatPvDelta(pvTotals.monthly, pvTotals.previous),
       },
       avgRating: {
         value: avgRating.toFixed(1),
@@ -217,9 +238,10 @@
     computeKpis,
     buildCategoryStats,
     getLatestReviews,
-    estimatePv,
+    loadPvStats,
+    getProductPvStats,
+    sparklineFromDaily,
     renderStars,
-    sparklineSvg,
     formatRelativeTime,
     CHART_COLORS,
   };

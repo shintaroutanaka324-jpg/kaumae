@@ -14,7 +14,7 @@
         <h1>アカウントを退会する</h1>
         <p>有料プランを解約後に退会できます。</p>
         <div class="withdraw-actions" style="justify-content:center">
-          <a href="pricing.html" class="btn btn-trust">プランを解約する</a>
+          <a href="account-settings.html" class="btn btn-trust">サブスクリプションを管理</a>
           <a href="account-settings.html" class="btn btn-outline">戻る</a>
         </div>
       </div>`;

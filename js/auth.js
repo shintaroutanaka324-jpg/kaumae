@@ -51,16 +51,36 @@
     });
   }
 
+  const AGE_GROUPS = ["10代", "20代", "30代", "40代", "50代", "60代以上"];
+  const GENDERS = ["男性", "女性", "その他", "回答しない"];
+
+  function isValidAgeGroup(value) {
+    return AGE_GROUPS.includes(value);
+  }
+
+  function isValidGender(value) {
+    return GENDERS.includes(value);
+  }
+
+  const PROFILE_COLUMNS_CORE =
+    "display_name, email, is_admin, is_paid_member, is_paid, has_posted_review, subscription_status, stripe_subscription_id, stripe_customer_id";
+  const PROFILE_COLUMNS_DEMO = "age_group, gender";
+
+  function isMissingProfileColumnError(error, columnNames) {
+    const msg = (error?.message || "").toLowerCase();
+    if (!msg.includes("column") && !msg.includes("schema cache")) return false;
+    return columnNames.some((name) => msg.includes(name.toLowerCase()));
+  }
+
   async function fetchProfile(userId) {
     if (!client || !userId) {
       profile = null;
       return;
     }
+
     const { data, error } = await client
       .from("profiles")
-      .select(
-        "display_name, email, is_admin, is_paid_member, is_paid, has_posted_review, subscription_status, stripe_subscription_id"
-      )
+      .select(PROFILE_COLUMNS_CORE)
       .eq("id", userId)
       .maybeSingle();
 
@@ -69,7 +89,31 @@
       profile = null;
       return;
     }
+
+    if (!data) {
+      profile = null;
+      return;
+    }
+
     profile = data;
+
+    const demoResult = await client
+      .from("profiles")
+      .select(PROFILE_COLUMNS_DEMO)
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (demoResult.error) {
+      if (!isMissingProfileColumnError(demoResult.error, ["age_group", "gender"])) {
+        console.warn("[カウマエ] 年代・性別の取得エラー", demoResult.error.message);
+      }
+      return;
+    }
+
+    if (demoResult.data) {
+      profile.age_group = demoResult.data.age_group;
+      profile.gender = demoResult.data.gender;
+    }
   }
 
   async function completeAuthFromUrl() {
@@ -252,9 +296,16 @@
     return false;
   }
 
-  async function signUp({ email, password, displayName }) {
+  async function signUp({ email, password, displayName, ageGroup, gender }) {
     const supabase = ensureClient();
     const trimmedEmail = email.trim();
+
+    if (!isValidAgeGroup(ageGroup)) {
+      throw new Error("年代を選択してください");
+    }
+    if (!isValidGender(gender)) {
+      throw new Error("性別を選択してください");
+    }
 
     if (await isEmailRegistered(trimmedEmail)) {
       throw new Error(DUPLICATE_EMAIL_MESSAGE);
@@ -264,7 +315,7 @@
       email: trimmedEmail,
       password,
       options: {
-        data: { display_name: displayName },
+        data: { display_name: displayName, age_group: ageGroup, gender },
         emailRedirectTo: getAuthPageUrl("auth-callback.html"),
       },
     });
@@ -277,6 +328,15 @@
     session = data.session;
     if (session?.user) {
       await fetchProfile(session.user.id);
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ age_group: ageGroup, gender })
+        .eq("id", session.user.id);
+      if (profileError) {
+        console.warn("[カウマエ] プロフィール年代・性別の保存エラー", profileError.message);
+      } else {
+        await fetchProfile(session.user.id);
+      }
     }
     return data;
   }
@@ -316,6 +376,7 @@
     if (session?.user) {
       await fetchProfile(session.user.id);
     }
+    window.dispatchEvent(new CustomEvent("auth:changed"));
     return data;
   }
 
@@ -378,6 +439,14 @@
     return profile?.subscription_status || null;
   }
 
+  function getAgeGroup() {
+    return profile?.age_group || session?.user?.user_metadata?.age_group || "";
+  }
+
+  function getGender() {
+    return profile?.gender || session?.user?.user_metadata?.gender || "";
+  }
+
   function getProfile() {
     return profile;
   }
@@ -385,7 +454,89 @@
   async function refreshProfile() {
     if (session?.user) {
       await fetchProfile(session.user.id);
+      window.dispatchEvent(new CustomEvent("auth:changed"));
     }
+  }
+
+  async function ensureProfile() {
+    if (!session?.user) return null;
+    if (!profile) {
+      await fetchProfile(session.user.id);
+    }
+    return profile;
+  }
+
+  async function updateProfile({ displayName, ageGroup, gender } = {}) {
+    const supabase = ensureClient();
+    if (!session?.user) throw new Error("ログインが必要です");
+
+    const profileUpdates = {};
+    const metadata = {};
+
+    if (displayName !== undefined) {
+      const trimmed = displayName.trim();
+      if (!trimmed) throw new Error("ユーザー名を入力してください");
+      profileUpdates.display_name = trimmed;
+      metadata.display_name = trimmed;
+    }
+
+    if (ageGroup !== undefined) {
+      if (!isValidAgeGroup(ageGroup)) throw new Error("年代を選択してください");
+      profileUpdates.age_group = ageGroup;
+      metadata.age_group = ageGroup;
+    }
+
+    if (gender !== undefined) {
+      if (!isValidGender(gender)) throw new Error("性別を選択してください");
+      profileUpdates.gender = gender;
+      metadata.gender = gender;
+    }
+
+    if (!Object.keys(profileUpdates).length && !Object.keys(metadata).length) {
+      return profile;
+    }
+
+    if (Object.keys(metadata).length) {
+      const { error: metaError } = await supabase.auth.updateUser({ data: metadata });
+      if (metaError) throw new Error(mapAuthError(metaError));
+    }
+
+    if (Object.keys(profileUpdates).length) {
+      let { error: profileError } = await supabase
+        .from("profiles")
+        .update(profileUpdates)
+        .eq("id", session.user.id);
+
+      if (profileError && isMissingProfileColumnError(profileError, ["age_group", "gender"])) {
+        const fallback = { ...profileUpdates };
+        delete fallback.age_group;
+        delete fallback.gender;
+        if (Object.keys(fallback).length) {
+          ({ error: profileError } = await supabase
+            .from("profiles")
+            .update(fallback)
+            .eq("id", session.user.id));
+        } else {
+          profileError = null;
+        }
+      }
+
+      if (profileError) throw new Error(profileError.message);
+    }
+
+    await fetchProfile(session.user.id);
+    if (ageGroup !== undefined || gender !== undefined) {
+      try {
+        await window.ReviewsApi?.syncUserReviewDemographics?.(session.user.id, {
+          ageGroup: ageGroup !== undefined ? ageGroup : undefined,
+          gender: gender !== undefined ? gender : undefined,
+        });
+      } catch (err) {
+        console.warn("[カウマエ] 口コミへの年代・性別反映エラー", err.message);
+      }
+    }
+    window.dispatchEvent(new CustomEvent("auth:changed"));
+    return profile;
   }
 
   function getClient() {
@@ -400,6 +551,7 @@
     signOut,
     resetPassword,
     updatePassword,
+    updateProfile,
     isLoggedIn,
     isAdmin,
     isPaidMember,
@@ -407,10 +559,15 @@
     getSubscriptionStatus,
     getProfile,
     refreshProfile,
+    ensureProfile,
     getClient,
     getUser,
     getUserName,
     getUserEmail,
+    getAgeGroup,
+    getGender,
+    AGE_GROUPS,
+    GENDERS,
     mapAuthError,
     isEmailRegistered,
     isDuplicateSignUpResponse,

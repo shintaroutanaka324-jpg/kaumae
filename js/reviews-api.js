@@ -34,6 +34,110 @@
     return partial?.id ?? null;
   }
 
+  function resolveShowPurchaseProof(row) {
+    if (row?.show_purchase_proof === true) return true;
+    if (row?.show_purchase_proof === false) return false;
+    return Boolean(row?.purchase_proof_path);
+  }
+
+  async function fetchProfilesDemographicsMap(userIds) {
+    const client = getClient();
+    const uniqueIds = [...new Set((userIds || []).filter(Boolean))];
+    if (!client || !uniqueIds.length) return new Map();
+
+    const { data, error } = await client
+      .from("profiles")
+      .select("id, age_group, gender")
+      .in("id", uniqueIds);
+
+    if (error) {
+      console.warn("[カウマエ] プロフィール年代・性別の取得エラー", error.message);
+      return new Map();
+    }
+
+    return new Map((data || []).map((profile) => [profile.id, profile]));
+  }
+
+  function enrichReviewRowWithProfile(row, profileMap) {
+    if (!row?.user_id || !profileMap?.size) return row;
+
+    const profile = profileMap.get(row.user_id);
+    if (!profile) return row;
+
+    return {
+      ...row,
+      reviewer_age_group: row.reviewer_age_group || profile.age_group || null,
+      reviewer_gender: row.reviewer_gender || profile.gender || null,
+    };
+  }
+
+  async function enrichReviewRowsWithProfiles(rows) {
+    if (!rows?.length) return [];
+
+    const profileMap = await fetchProfilesDemographicsMap(
+      rows
+        .filter((row) => row.user_id && (!row.reviewer_age_group || !row.reviewer_gender))
+        .map((row) => row.user_id)
+    );
+
+    if (!profileMap.size) return rows;
+    return rows.map((row) => enrichReviewRowWithProfile(row, profileMap));
+  }
+
+  async function resolveDemographicsForReview(row) {
+    const currentAge = row?.reviewer_age_group || "";
+    const currentGender = row?.reviewer_gender || "";
+    if (currentAge && currentGender) {
+      return { reviewer_age_group: currentAge, reviewer_gender: currentGender };
+    }
+    if (!row?.user_id) {
+      return {
+        reviewer_age_group: currentAge || null,
+        reviewer_gender: currentGender || null,
+      };
+    }
+
+    const profileMap = await fetchProfilesDemographicsMap([row.user_id]);
+    const profile = profileMap.get(row.user_id);
+    return {
+      reviewer_age_group: currentAge || profile?.age_group || null,
+      reviewer_gender: currentGender || profile?.gender || null,
+    };
+  }
+
+  async function syncUserReviewDemographics(userId, { ageGroup, gender } = {}) {
+    const client = getClient();
+    if (!client || !userId || (!ageGroup && !gender)) return;
+
+    const { data: rows, error } = await client
+      .from("submitted_reviews")
+      .select("id, reviewer_age_group, reviewer_gender")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.warn("[カウマエ] 口コミ年代・性別の同期エラー", error.message);
+      return;
+    }
+
+    for (const row of rows || []) {
+      const updates = {};
+      if (ageGroup && !row.reviewer_age_group) updates.reviewer_age_group = ageGroup;
+      if (gender && !row.reviewer_gender) updates.reviewer_gender = gender;
+      if (!Object.keys(updates).length) continue;
+
+      const { error: updateError } = await client
+        .from("submitted_reviews")
+        .update(updates)
+        .eq("id", row.id);
+
+      if (updateError && !isMissingDemographicsColumnError(updateError)) {
+        console.warn("[カウマエ] 口コミ年代・性別の更新エラー", updateError.message);
+      }
+    }
+
+    await loadApprovedReviews();
+  }
+
   function rowToLegacyReview(row) {
     const ratings = [
       Number(row.cost_performance),
@@ -49,11 +153,12 @@
       id: `db-${row.id}`,
       productId: row.product_id || "",
       productName: row.product_name || "",
-      userName: row.reviewer_display_name || "匿名ユーザー",
-      age: "30代",
+      userName: normalizeReviewerDisplayName(row.reviewer_display_name),
+      age: row.reviewer_age_group || "",
+      gender: row.reviewer_gender || "",
       rating,
       date: dateSource.split("T")[0],
-      verifiedPurchase: Boolean(row.purchase_proof_path),
+      verifiedPurchase: resolveShowPurchaseProof(row),
       title: row.body_pros.slice(0, 40) + (row.body_pros.length > 40 ? "…" : ""),
       content: row.body_pros,
       purchasePrice: row.purchase_price,
@@ -116,7 +221,9 @@
       return approvedCache;
     }
 
-    applyApprovedCache((result.data || []).filter(isReviewPublished));
+    const published = (result.data || []).filter(isReviewPublished);
+    const enriched = await enrichReviewRowsWithProfiles(published);
+    applyApprovedCache(enriched);
     return approvedCache;
   }
 
@@ -124,6 +231,14 @@
     const msg = error?.message || "";
     return (
       (msg.includes("seller_name") || msg.includes("has_refund_guarantee")) &&
+      msg.includes("schema cache")
+    );
+  }
+
+  function isMissingDemographicsColumnError(error) {
+    const msg = error?.message || "";
+    return (
+      (msg.includes("reviewer_age_group") || msg.includes("reviewer_gender")) &&
       msg.includes("schema cache")
     );
   }
@@ -241,7 +356,6 @@
 
     const user = window.Auth.getUser();
     const year = document.getElementById("purchaseYear")?.value;
-    const month = document.getElementById("purchaseMonth")?.value;
     const serviceName = (formData.serviceName || formData.productName || "").trim();
     const sellerName = (formData.sellerName || "").trim();
     const hasRefundGuarantee = formData.hasRefundGuarantee || "";
@@ -253,7 +367,7 @@
     }
 
     const productId = findProductIdByName(serviceName);
-    const reviewerName = `匿名ユーザー${String(user.id).slice(0, 4).toUpperCase()}`;
+    const reviewerName = "匿名ユーザー";
 
     const ratingKeyMap = {
       costPerformance: "cost_performance",
@@ -278,11 +392,11 @@
       bodyOther: "body_other",
     };
     const bodyMinLengths = {
-      body_pros: 150,
-      body_concerns: 80,
-      body_before: 80,
-      body_results: 150,
-      body_recommend: 80,
+      body_pros: 100,
+      body_concerns: 30,
+      body_before: 50,
+      body_results: 50,
+      body_recommend: 50,
     };
     const bodyMinLabels = {
       body_pros: "良かった点",
@@ -313,6 +427,14 @@
     const quality = window.ReviewQuality.evaluateReviewBodies(bodies);
     const readUnlockStatus = quality.pass ? "auto_approved" : "pending";
 
+    await window.Auth.refreshProfile?.();
+    const ageGroup = window.Auth.getAgeGroup?.() || null;
+    const gender = window.Auth.getGender?.() || null;
+
+    if (!ageGroup || !gender) {
+      throw new Error("年代と性別をアカウント設定で登録してから口コミを投稿してください。");
+    }
+
     const insertPayload = {
       user_id: user.id,
       status: "pending",
@@ -324,7 +446,7 @@
       has_refund_guarantee: hasRefundGuarantee,
       purchase_price: Number(formData.purchasePrice),
       purchase_year: year ? Number(year) : null,
-      purchase_month: month ? Number(month) : null,
+      purchase_month: null,
       cost_performance: ratings.cost_performance,
       recommendation: ratings.recommendation,
       support_quality: ratings.support_quality,
@@ -341,6 +463,8 @@
       body_numeric: bodies.numeric_results?.trim() || null,
       body_other: bodies.body_other?.trim() || null,
       reviewer_display_name: reviewerName,
+      reviewer_age_group: ageGroup,
+      reviewer_gender: gender,
     };
 
     let created;
@@ -350,6 +474,17 @@
       .insert(insertPayload)
       .select("*")
       .single());
+
+    if (insertError && isMissingDemographicsColumnError(insertError)) {
+      const fallbackPayload = { ...insertPayload };
+      delete fallbackPayload.reviewer_age_group;
+      delete fallbackPayload.reviewer_gender;
+      ({ data: created, error: insertError } = await client
+        .from("submitted_reviews")
+        .insert(fallbackPayload)
+        .select("*")
+        .single());
+    }
 
     if (insertError && isMissingSubmitFieldsColumnError(insertError)) {
       const fallbackPayload = { ...insertPayload };
@@ -573,11 +708,11 @@
   }
 
   const ADMIN_BODY_MIN = {
-    body_pros: 150,
-    body_concerns: 80,
-    body_before: 80,
-    body_results: 150,
-    body_recommend: 80,
+    body_pros: 100,
+    body_concerns: 30,
+    body_before: 50,
+    body_results: 50,
+    body_recommend: 50,
   };
 
   const ADMIN_BODY_LABELS = {
@@ -623,6 +758,11 @@
     return msg.includes("was_edited_by_admin") && msg.includes("schema cache");
   }
 
+  function isMissingShowPurchaseProofColumnError(error) {
+    const msg = error?.message || "";
+    return msg.includes("show_purchase_proof") && msg.includes("schema cache");
+  }
+
   function isMissingPublishedColumnError(error) {
     const msg = error?.message || "";
     return msg.includes("is_published") && msg.includes("schema cache");
@@ -662,10 +802,21 @@
         .single();
     }
 
+    if (result.error && isMissingShowPurchaseProofColumnError(result.error)) {
+      const fallback = { ...payload };
+      delete fallback.show_purchase_proof;
+      result = await getClient()
+        .from("submitted_reviews")
+        .update(fallback)
+        .eq("id", id)
+        .select("*")
+        .single();
+    }
+
     return result;
   }
 
-  async function approveReview(id, { productId, adminNote, content, wasEdited, productName } = {}) {
+  async function approveReview(id, { productId, adminNote, content, wasEdited, productName, showPurchaseProof } = {}) {
     ensureConfigured();
     if (!window.Auth.isAdmin?.()) throw new Error("運営者権限が必要です");
 
@@ -691,20 +842,42 @@
 
     applyAdminContentToPayload(payload, content);
 
+    if (showPurchaseProof !== undefined) {
+      payload.show_purchase_proof = Boolean(showPurchaseProof);
+    }
+
+    const { data: existingReview, error: fetchExistingError } = await getClient()
+      .from("submitted_reviews")
+      .select("user_id, reviewer_age_group, reviewer_gender")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!fetchExistingError && existingReview) {
+      const demographics = await resolveDemographicsForReview(existingReview);
+      if (demographics.reviewer_age_group) {
+        payload.reviewer_age_group = demographics.reviewer_age_group;
+      }
+      if (demographics.reviewer_gender) {
+        payload.reviewer_gender = demographics.reviewer_gender;
+      }
+    }
+
     const { data, error } = await updateSubmittedReview(id, payload);
 
     if (error) {
       throw new Error(
         isMissingWasEditedColumnError(error)
           ? "口コミ公開に必要なDB列がありません。Supabase SQL Editor で supabase/schema-reviews-admin-edit.sql を実行してください。"
-          : error.message
+          : isMissingShowPurchaseProofColumnError(error)
+            ? "購入証明表示の保存に必要なDB列がありません。Supabase SQL Editor で supabase/schema-reviews-purchase-proof-display.sql を実行してください。"
+            : error.message
       );
     }
     await loadApprovedReviews();
     return data;
   }
 
-  async function updateReviewAdmin(id, { productId, productName, adminNote, content, wasEdited } = {}) {
+  async function updateReviewAdmin(id, { productId, productName, adminNote, content, wasEdited, showPurchaseProof } = {}) {
     ensureConfigured();
     if (!window.Auth.isAdmin?.()) throw new Error("運営者権限が必要です");
 
@@ -747,13 +920,19 @@
 
     applyAdminContentToPayload(payload, content);
 
+    if (showPurchaseProof !== undefined) {
+      payload.show_purchase_proof = Boolean(showPurchaseProof);
+    }
+
     const { data, error } = await updateSubmittedReview(id, payload);
 
     if (error) {
       throw new Error(
         isMissingWasEditedColumnError(error)
           ? "口コミ更新に必要なDB列がありません。Supabase SQL Editor で supabase/schema-reviews-admin-edit.sql を実行してください。"
-          : error.message
+          : isMissingShowPurchaseProofColumnError(error)
+            ? "購入証明表示の保存に必要なDB列がありません。Supabase SQL Editor で supabase/schema-reviews-purchase-proof-display.sql を実行してください。"
+            : error.message
       );
     }
     await loadApprovedReviews();
@@ -889,6 +1068,7 @@
     isReviewPublished,
     statusLabel,
     rowToLegacyReview,
+    syncUserReviewDemographics,
     getApprovedCache: () => approvedCache,
   };
 })();

@@ -1,10 +1,10 @@
 (function () {
   const REQUIRED_FIELDS = [
-    { key: "body_pros", label: "良かった点・満足した点", minChars: 150 },
-    { key: "body_concerns", label: "気になった点・改善してほしい点", minChars: 80 },
-    { key: "body_before", label: "受講前・利用前の状態", minChars: 80 },
-    { key: "body_results", label: "受講後・利用後の変化", minChars: 150 },
-    { key: "body_recommend", label: "どんな人におすすめしたいか", minChars: 80 },
+    { key: "body_pros", label: "良かった点・満足した点", minChars: 100 },
+    { key: "body_concerns", label: "気になった点・改善してほしい点", minChars: 30 },
+    { key: "body_before", label: "受講前・利用前の状態", minChars: 50 },
+    { key: "body_results", label: "受講後・利用後の変化", minChars: 50 },
+    { key: "body_recommend", label: "どんな人におすすめしたいか", minChars: 50 },
   ];
 
   const PROMO_PATTERNS = [

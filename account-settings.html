@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>アカウント設定 | カウマエ</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260613chrome" />
   <link rel="stylesheet" href="css/account.css" />
 </head>
 <body>
@@ -15,8 +15,12 @@
     <div class="container page-inner page-inner--medium">
       <header class="account-header">
         <h1>アカウント設定</h1>
-        <p>アカウント情報の確認や退会手続きを行えます。</p>
+        <p>アカウント情報の確認・変更、サブスクリプションの管理、退会手続きを行えます。</p>
       </header>
+
+      <div class="account-card account-card--profile" id="account-profile-root"></div>
+
+      <div class="account-card account-card--subscription" id="account-subscription-root"></div>
 
       <div class="account-card">
         <ul class="account-menu-list">
@@ -40,7 +44,9 @@
   <div id="site-footer"></div>
 
   <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260613adminmenu"></script>
+  <script src="js/account-api.js"></script>
+  <script src="js/account-settings.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await App.whenReady();
@@ -50,10 +56,15 @@
         return;
       }
 
+      await Auth.ensureProfile?.();
+
       App.renderBreadcrumb([
         { label: "トップ", path: "index.html" },
         { label: "アカウント設定" },
       ]);
+
+      AccountSettings.renderProfile(document.getElementById("account-profile-root"));
+      AccountSettings.renderSubscription(document.getElementById("account-subscription-root"));
     });
   </script>
 </body>

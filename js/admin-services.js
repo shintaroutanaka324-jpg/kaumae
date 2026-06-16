@@ -15,16 +15,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    await Auth.ensureProfile?.();
+
     if (!Auth.isAdmin()) {
-      app.innerHTML = `<div class="adm-empty-state" style="padding:4rem">運営者権限が必要です。<br><a href="index.html">トップへ</a></div>`;
+      app.innerHTML = `<div class="adm-empty-state" style="padding:4rem">運営者権限が必要です。<br>Supabase の <code>profiles</code> テーブルで <code>is_admin = true</code> が設定されているか確認してください。<br><a href="index.html">トップへ</a></div>`;
       return;
     }
 
     const contentRoot = await AdminShell.mount(app, {
       active: "services",
-      pageTitle: "サービス管理",
-      pageSubtitle: "登録サービスの監視・編集・公開設定",
-      searchPlaceholder: "サービス名・講師・カテゴリで検索...",
+      pageTitle: "登録管理",
+      pageSubtitle: "登録内容の監視・編集・公開設定",
+      searchPlaceholder: "提供者・講師・カテゴリで検索...",
       onSearch: (q) => AdminProducts.setSearchQuery(q),
     });
 

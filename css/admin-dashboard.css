@@ -531,6 +531,25 @@
   margin-bottom: 0.1rem;
 }
 
+.adm-table-provider {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.adm-table-tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
 .adm-table-sub {
   font-size: 0.75rem;
   color: #9ca3af;
@@ -734,6 +753,105 @@
 
 .adm-quick-btn.is-primary:hover {
   background: #047857;
+}
+
+.adm-panel--full {
+  margin-top: 1.25rem;
+}
+
+.adm-inquiries-badge {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.adm-inquiries-badge.is-alert {
+  color: #b45309;
+}
+
+.adm-inquiry-table-wrap {
+  overflow-x: auto;
+}
+
+.adm-inquiry-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.adm-inquiry-table th,
+.adm-inquiry-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  vertical-align: top;
+}
+
+.adm-inquiry-table th {
+  color: #64748b;
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+.adm-inquiry-status {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.adm-inquiry-status.is-new {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.adm-inquiry-status.is-progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.adm-inquiry-status.is-resolved {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.adm-inquiry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.adm-inquiry-detail-body {
+  padding: 0.75rem 0;
+}
+
+.adm-inquiry-message {
+  margin: 0 0 0.75rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.adm-inquiry-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.adm-inquiry-note-field {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.adm-inquiry-note-field span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.adm-inquiry-detail-row.hidden {
+  display: none;
 }
 
 /* Modal */
@@ -1025,6 +1143,57 @@
 
 .adm-proof-no {
   color: #d1d5db;
+}
+
+.adm-proof-held {
+  color: #d97706;
+  font-weight: 700;
+}
+
+.adm-proof-admin-meta {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-100);
+}
+
+.adm-proof-display-field {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.adm-proof-display-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.5rem;
+}
+
+.adm-proof-display-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.adm-proof-display-option:has(input:checked) {
+  border-color: #059669;
+  background: #ecfdf5;
+}
+
+.adm-proof-display-option input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.adm-proof-display-option-label {
+  font-size: 0.875rem;
+  color: var(--gray-800);
+  line-height: 1.5;
 }
 
 .adm-review-feed-item--clickable {

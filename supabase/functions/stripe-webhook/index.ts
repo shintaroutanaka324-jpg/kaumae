@@ -63,6 +63,33 @@ serve(async (req) => {
         });
         break;
       }
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        let userId = subscription.metadata?.supabase_user_id;
+
+        if (!userId) {
+          const { data: profileBySub } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("stripe_subscription_id", subscription.id)
+            .maybeSingle();
+          userId = profileBySub?.id;
+        }
+
+        if (!userId) break;
+
+        const isPaid = subscription.status === "active" || subscription.status === "trialing";
+
+        await setPaidStatus(supabase, userId, {
+          is_paid: isPaid,
+          is_paid_member: isPaid,
+          stripe_customer_id: String(subscription.customer || ""),
+          stripe_subscription_id: subscription.id,
+          subscription_status: subscription.status,
+          updated_at: new Date().toISOString(),
+        });
+        break;
+      }
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         const userId = subscription.metadata?.supabase_user_id;

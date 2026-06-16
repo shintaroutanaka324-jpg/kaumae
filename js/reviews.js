@@ -202,6 +202,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   function renderProductCard({ product, stats }) {
     const detailUrl = `review-detail.html?id=${product.id}`;
     const catLabel = getCategoryShortLabel(product.category);
+    const displayName = getProductDisplayName(product);
 
     return `
       <article class="rs-card">
@@ -217,9 +218,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="rs-card-head">
             <span class="rs-card-cat">${App.escapeHtml(catLabel)}</span>
             <h2 class="rs-card-provider">
-              <a href="${detailUrl}">${App.escapeHtml(product.instructor)}</a>
+              <a href="${detailUrl}">${App.escapeHtml(displayName)}</a>
             </h2>
-            <p class="rs-card-service">${App.escapeHtml(product.title)}</p>
           </div>
           <div class="rs-card-highlights">
             <p class="rs-card-pro">
@@ -262,8 +262,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         <li class="rs-ranking-item">
           <span class="rs-ranking-rank">${i + 1}</span>
           <a href="review-detail.html?id=${product.id}" class="rs-ranking-link">
-            <span class="rs-ranking-title">${App.escapeHtml(truncateLine(product.instructor, 18))}</span>
-            <span class="rs-ranking-meta">${App.escapeHtml(truncateLine(product.title, 20))} · 口コミ ${stats.displayCount}件</span>
+            <span class="rs-ranking-title">${App.escapeHtml(truncateLine(getProductDisplayName(product), 24))}</span>
+            <span class="rs-ranking-meta">口コミ ${stats.displayCount}件</span>
           </a>
         </li>`
       )
@@ -286,8 +286,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         <a href="review-detail.html?id=${product.id}" class="rs-side-item">
           <img src="${product.imageUrl}" alt="" loading="lazy" decoding="async" />
           <span class="rs-side-item-text">
-            <span class="rs-side-item-title">${App.escapeHtml(truncateLine(product.instructor, 16))}</span>
-            <span class="rs-side-item-meta">${App.escapeHtml(truncateLine(product.title, 18))}</span>
+            <span class="rs-side-item-title">${App.escapeHtml(truncateLine(getProductDisplayName(product), 20))}</span>
+            <span class="rs-side-item-meta">${App.escapeHtml(getCategoryShortLabel(product.category))}</span>
           </span>
         </a>`;
       })

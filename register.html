@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>新規登録 | カウマエ</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260613chrome" />
   <style>
     .register-error {
       margin-bottom: 1rem;
@@ -30,6 +30,31 @@
         <div class="form-group">
           <label class="form-label" for="name">ユーザー名</label>
           <input type="text" class="form-input" id="name" required placeholder="山田太郎" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ageGroup">年代</label>
+          <select class="form-input" id="ageGroup" required>
+            <option value="" disabled selected>選択してください</option>
+            <option value="10代">10代</option>
+            <option value="20代">20代</option>
+            <option value="30代">30代</option>
+            <option value="40代">40代</option>
+            <option value="50代">50代</option>
+            <option value="60代以上">60代以上</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="gender">性別</label>
+          <select class="form-input" id="gender" required>
+            <option value="" disabled selected>選択してください</option>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+            <option value="その他">その他</option>
+            <option value="回答しない">回答しない</option>
+          </select>
+          <p style="font-size:0.75rem;color:var(--gray-600);margin-top:0.35rem">
+            口コミに年代・性別が表示されます（個人を特定できる情報は掲載しません）
+          </p>
         </div>
         <div class="form-group">
           <label class="form-label" for="email">メールアドレス</label>
@@ -66,7 +91,7 @@
   <div id="site-footer"></div>
 
   <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260613adminmenu"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await App.whenReady();
@@ -110,7 +135,14 @@
         }
 
         const name = document.getElementById("name").value.trim();
+        const ageGroup = document.getElementById("ageGroup").value;
+        const gender = document.getElementById("gender").value;
         const email = document.getElementById("email").value.trim();
+
+        if (!ageGroup || !gender) {
+          App.showToast("年代と性別を選択してください", "error");
+          return;
+        }
 
         submitBtn.disabled = true;
         submitBtn.textContent = "登録中...";
@@ -122,7 +154,7 @@
             return;
           }
 
-          const data = await Auth.signUp({ email, password: pw, displayName: name });
+          const data = await Auth.signUp({ email, password: pw, displayName: name, ageGroup, gender });
 
           if (Auth.isDuplicateSignUpResponse(data)) {
             showRegisterError(Auth.DUPLICATE_EMAIL_MESSAGE);

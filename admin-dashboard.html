@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ダッシュボード | カウマエ 運営</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260613chrome" />
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="css/admin-dashboard.css" />
 </head>
@@ -16,8 +16,11 @@
   <script src="js/auth.js"></script>
   <script src="js/products-api.js"></script>
   <script src="js/reviews-api.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260613adminmenu"></script>
+  <script src="js/contact-api.js"></script>
+  <script src="js/admin-inquiries.js"></script>
   <script src="js/admin-dashboard-stats.js"></script>
+  <script src="js/product-pv-api.js"></script>
   <script src="js/admin-pending-count.js"></script>
   <script src="js/admin-shell.js"></script>
   <script>
@@ -28,8 +31,9 @@
         window.location.href = "login.html?redirect=admin-dashboard.html";
         return;
       }
+      await Auth.ensureProfile?.();
       if (!Auth.isAdmin()) {
-        app.innerHTML = '<div class="adm-empty-state" style="padding:4rem">運営者権限が必要です</div>';
+        app.innerHTML = '<div class="adm-empty-state" style="padding:4rem">運営者権限が必要です。<br>Supabase の <code>profiles</code> テーブルで <code>is_admin = true</code> が設定されているか確認してください。</div>';
         return;
       }
 
@@ -44,8 +48,10 @@
 
       const products =
         typeof getAllProducts === "function" ? getAllProducts() : PRODUCTS || [];
+      const pvStats = await AdminDashboardStats.loadPvStats();
       const kpis = await AdminDashboardStats.computeKpis(
-        products.map((p) => ({ ...p, source: p.isDbProduct ? "db" : "static" }))
+        products.map((p) => ({ ...p, source: p.isDbProduct ? "db" : "static" })),
+        pvStats
       );
       const latest = AdminDashboardStats.getLatestReviews(8);
       const catStats = AdminDashboardStats.buildCategoryStats(products);
@@ -82,6 +88,7 @@
               <a href="admin-services.html" class="adm-quick-btn is-primary">サービス管理へ</a>
               <a href="admin.html" class="adm-quick-btn">口コミ管理へ</a>
               <a href="admin-withdrawals.html" class="adm-quick-btn">退会ユーザー管理</a>
+              <a href="admin-inquiries.html" class="adm-quick-btn">お問い合わせ一覧</a>
             </div>
           </div>
           <div class="adm-aside">
@@ -99,7 +106,16 @@
               </div>
             </div>
           </div>
-        </div>`;
+        </div>
+        <section class="adm-panel adm-panel--full" id="adm-inquiries-section" aria-labelledby="adm-inquiries-title">
+          <div class="adm-panel-head">
+            <h3 class="adm-panel-title" id="adm-inquiries-title">お問い合わせ</h3>
+            <span class="adm-inquiries-badge" id="adm-inquiries-new-count">—</span>
+          </div>
+          <div class="adm-panel-body" id="adm-inquiries-root"></div>
+        </section>`;
+
+      await AdminInquiries.mount(document.getElementById("adm-inquiries-root"));
     });
   </script>
 </body>

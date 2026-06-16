@@ -73,10 +73,16 @@ function initHeroSearch() {
 }
 
 function renderTrending() {
+  const wrap = document.getElementById("home-trending-wrap");
   const el = document.getElementById("home-trending");
   if (!el || typeof TRENDING_SEARCHES === "undefined") return;
 
   const items = TRENDING_SEARCHES.slice(0, 4);
+  if (!items.length) {
+    if (wrap) wrap.hidden = true;
+    return;
+  }
+  if (wrap) wrap.hidden = false;
   el.innerHTML = items
     .map((t) => {
       const hint = t.hint ? `（${App.escapeHtml(t.hint)}）` : "";
@@ -109,7 +115,7 @@ function excerptText(text, maxLen = 100) {
 
 function resolveReviewLinks(r, productMap) {
   const product = r.productId ? productMap[r.productId] : null;
-  const serviceName = product?.title || r.productName || "（サービス名非公開）";
+  const serviceName = product ? getProductDisplayName(product) : r.productName || "（サービス名非公開）";
 
   let detailUrl = "reviews.html";
   if (product) {
@@ -127,7 +133,6 @@ function renderReviewCardHtml(r, productMap) {
   const { product, serviceName, detailUrl } = resolveReviewLinks(r, productMap);
   const rating = r.rating || 4;
   const category = product ? getCategoryLabel(product.category) : "—";
-  const instructor = product ? product.instructor : "";
   const badges = renderReviewTrustBadges(r, { large: true });
   const noBadgeNote = hasAnyTrustBadge(r)
     ? ""
@@ -150,11 +155,11 @@ function renderReviewCardHtml(r, productMap) {
         ${dbBadge}
         ${noBadgeNote}
         <a href="${detailUrl}" class="review-feed-service-name review-feed-service-name--lg">${App.escapeHtml(serviceName)}</a>
-        ${instructor ? `<p class="review-feed-instructor">講師・発信者：${App.escapeHtml(instructor)} · ${App.escapeHtml(category)}</p>` : `<p class="review-feed-instructor">${App.escapeHtml(category)}</p>`}
+        <p class="review-feed-instructor">${App.escapeHtml(category)}</p>
         <h3 class="review-feed-title review-feed-title--lg">${App.escapeHtml(title)}</h3>
         <p class="review-feed-body review-feed-body--lg">${App.escapeHtml(body)}</p>
         <footer class="review-feed-footer">
-          <span class="review-feed-user">${App.escapeHtml(r.userName)}（${r.age}）</span>
+          <span class="review-feed-user">${App.escapeHtml(normalizeReviewerDisplayName(r.userName))}${r.age ? `（${App.escapeHtml(r.age)}）` : ""}</span>
           <a href="${detailUrl}" class="review-feed-link">${showReadMore ? "続きを読む →" : "詳細を見る →"}</a>
         </footer>
       </article>`;

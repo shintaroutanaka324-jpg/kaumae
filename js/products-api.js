@@ -17,6 +17,26 @@
     return client;
   }
 
+  function normalizeExternalUrl(raw) {
+    const value = String(raw || "").trim();
+    if (!value || value === "#") return "";
+
+    let url = value;
+    if (/^\/\//.test(url)) {
+      url = `https:${url}`;
+    } else if (!/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+      url = `https://${url}`;
+    }
+
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+      return parsed.href;
+    } catch {
+      return "";
+    }
+  }
+
   function rowToProduct(row) {
     return {
       id: row.id,
@@ -34,7 +54,7 @@
       highlightPro: row.highlight_pro || "",
       highlightCon: row.highlight_con || "",
       proofRate: Number(row.proof_rate) || 0,
-      officialUrl: row.official_url || "",
+      officialUrl: normalizeExternalUrl(row.official_url),
       supportPeriod: row.support_period || "3〜6ヶ月",
       refundPolicy: row.refund_policy || "なし",
       isDbProduct: true,
@@ -60,7 +80,7 @@
       highlight_pro: product.highlightPro?.trim() || null,
       highlight_con: product.highlightCon?.trim() || null,
       proof_rate: Number(product.proofRate) || 0,
-      official_url: product.officialUrl?.trim() || null,
+      official_url: normalizeExternalUrl(product.officialUrl) || null,
       support_period: product.supportPeriod?.trim() || null,
       refund_policy: product.refundPolicy?.trim() || null,
       is_published: product.isPublished !== false,
@@ -302,5 +322,6 @@
     uploadProductImage,
     generateProductId,
     DEFAULT_IMAGE,
+    normalizeExternalUrl,
   };
 })();

@@ -60,6 +60,11 @@
       console.warn("[カウマエ] billing-api の読み込みをスキップ", err);
     }
     try {
+      await loadScript("js/product-pv-api.js");
+    } catch (err) {
+      console.warn("[カウマエ] product-pv-api の読み込みをスキップ", err);
+    }
+    try {
       await loadScript("js/admin-pending-count.js");
     } catch (err) {
       console.warn("[カウマエ] admin-pending-count の読み込みをスキップ", err);
@@ -232,9 +237,6 @@
     html += `<a href="account-settings.html">アカウント設定</a>`;
     if (window.Auth?.isAdmin?.()) {
       html += `<a href="admin-dashboard.html">運営ダッシュボード</a>`;
-      html += `<a href="admin.html" data-pending-badge="account-review">口コミ審査（運営）</a>`;
-      html += `<a href="admin-services.html">サービス管理（運営）</a>`;
-      html += `<a href="admin-withdrawals.html">退会ユーザー管理（運営）</a>`;
     }
     return html;
   }
@@ -244,9 +246,6 @@
     html += `<a href="account-settings.html" class="mobile-account-link">アカウント設定</a>`;
     if (window.Auth?.isAdmin?.()) {
       html += `<a href="admin-dashboard.html" class="mobile-account-link">運営ダッシュボード</a>`;
-      html += `<a href="admin.html" class="mobile-account-link" data-pending-badge="account-review-mobile">口コミ審査（運営）</a>`;
-      html += `<a href="admin-services.html" class="mobile-account-link">サービス管理（運営）</a>`;
-      html += `<a href="admin-withdrawals.html" class="mobile-account-link">退会ユーザー管理（運営）</a>`;
     }
     return html;
   }
@@ -262,41 +261,49 @@
     const current = getCurrentPage();
 
     el.innerHTML = `
-      <header class="site-header">
-        <div class="container header-inner">
-          <a href="index.html" class="logo">${renderLogoInner()}</a>
-          <form class="search-form" id="header-search-form">
-            <div class="search-wrap">
-              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="text" class="search-input" id="header-search" placeholder="発信者名・アカウント名で口コミを検索..." />
-            </div>
-          </form>
-          <nav class="header-nav">
-            ${
-              loggedIn
-                ? `
-              <div class="user-menu">
-                <button type="button" class="user-btn" id="user-menu-btn">
-                  <span class="avatar">👤</span>
-                  <span class="user-name">${escapeHtml(userName)}</span>
-                  ${isPaid ? '<span class="member-badge">有料会員</span>' : ""}
-                  <span class="user-btn-caret" aria-hidden="true">▼</span>
-                </button>
-                <div class="dropdown dropdown--account" id="user-dropdown">
-                  ${userEmail ? `<p class="dropdown-email">${escapeHtml(userEmail)}</p>` : ""}
-                  ${renderAccountMenuLinks()}
-                  <hr>
-                  <button type="button" id="logout-btn">ログアウト</button>
-                </div>
-              </div>`
-                : `
-              <a href="login.html" class="btn btn-ghost btn-sm">ログイン</a>
-              <a href="register.html" class="btn btn-trust btn-sm">新規登録</a>`
-            }
-          </nav>
-          <button type="button" class="menu-toggle" id="menu-toggle" aria-label="メニュー">☰</button>
-        </div>
-        <div class="container mobile-nav" id="mobile-nav">
+      <div class="container site-chrome-inner">
+        <header class="site-header">
+          <div class="header-inner">
+            <a href="index.html" class="logo">${renderLogoInner()}</a>
+            <form class="search-form" id="header-search-form">
+              <div class="search-wrap">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" class="search-input" id="header-search" placeholder="発信者名・アカウント名で口コミを検索..." />
+              </div>
+            </form>
+            <nav class="header-nav">
+              ${
+                loggedIn
+                  ? `
+                <div class="user-menu">
+                  <button type="button" class="user-btn" id="user-menu-btn">
+                    <span class="avatar">👤</span>
+                    <span class="user-name">${escapeHtml(userName)}</span>
+                    ${isPaid ? '<span class="member-badge">有料会員</span>' : ""}
+                    <span class="user-btn-caret" aria-hidden="true">▼</span>
+                  </button>
+                  <div class="dropdown dropdown--account" id="user-dropdown">
+                    ${userEmail ? `<p class="dropdown-email">${escapeHtml(userEmail)}</p>` : ""}
+                    ${renderAccountMenuLinks()}
+                    <hr>
+                    <button type="button" id="logout-btn">ログアウト</button>
+                  </div>
+                </div>`
+                  : `
+                <a href="login.html" class="btn btn-ghost btn-sm">ログイン</a>
+                <a href="register.html" class="btn btn-trust btn-sm">新規登録</a>`
+              }
+            </nav>
+            <button type="button" class="menu-toggle" id="menu-toggle" aria-label="メニュー">☰</button>
+          </div>
+        </header>
+        <nav class="sub-nav" aria-label="メインナビゲーション">
+          <div class="sub-nav-inner">
+            ${renderSubNavLinks(current)}
+          </div>
+        </nav>
+      </div>
+      <div class="container mobile-nav" id="mobile-nav">
           ${
             loggedIn
               ? `<div class="mobile-user-bar">
@@ -333,14 +340,6 @@
           }
           </div>
         </div>
-      </header>
-      <nav class="sub-nav" aria-label="メインナビゲーション">
-        <div class="container sub-nav-shell">
-          <div class="sub-nav-inner">
-            ${renderSubNavLinks(current)}
-          </div>
-        </div>
-      </nav>
     `;
 
     document.getElementById("header-search-form")?.addEventListener("submit", (e) => {
@@ -480,6 +479,7 @@
     renderFooter();
     await refreshAdminPendingBadges();
     window.BillingApi?.handlePaymentQueryParams?.();
+    window.BillingApi?.handleBillingReturnQueryParams?.();
   });
 
   window.addEventListener("auth:changed", async () => {
