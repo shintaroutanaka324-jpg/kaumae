@@ -373,6 +373,7 @@ function renderSidebar(starDist, reviewCount, avgRating, reviews = []) {
           <p class="pd2-side-score">${scoreDisplay}<span class="pd2-side-score-max">/ 5.0</span></p>
           <p class="pd2-side-count">${reviewCount.toLocaleString("ja-JP")}件の口コミ</p>
         </div>
+        ${renderRadarChartPanel(reviews)}
         <div class="pd2-side-panel pd2-side-panel--card">
           <h2 class="pd2-side-title">評価分布</h2>
           ${
@@ -381,7 +382,6 @@ function renderSidebar(starDist, reviewCount, avgRating, reviews = []) {
               : `<p class="pd2-empty pd2-empty--compact">口コミが集まると表示されます</p>`
           }
         </div>
-        ${renderRadarChartPanel(reviews)}
       </div>
     </aside>`;
 }
