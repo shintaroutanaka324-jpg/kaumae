@@ -48,7 +48,7 @@
     }
     try {
       if (!window.ProductsApi) {
-        await loadScript("js/products-api.js?v=20260617categories");
+        await loadScript("js/products-api.js?v=20260617categories2");
       }
       await window.ProductsApi?.whenReady?.();
     } catch (err) {

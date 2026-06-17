@@ -56,14 +56,14 @@ const CATEGORY_IMAGE_FILES = {
   "ai-it-skills": "images/categories/ai-it-skills.png",
   "web-marketing": "images/categories/web-marketing.png",
   "sales-business-skills": "images/categories/sales-business-skills.png",
+  "certification-exam": "images/categories/certification-exam.png",
+  "english-language": "images/categories/english-language.png",
+  "money-asset-building": "images/categories/money-asset-building.png",
+  "health-lifestyle": "images/categories/health-lifestyle.png",
 };
 
 /** 専用画像がないカテゴリの代替 */
 const CATEGORY_IMAGE_FALLBACKS = {
-  "certification-exam": "career-job-change",
-  "english-language": "career-job-change",
-  "money-asset-building": "side-business-independence",
-  "health-lifestyle": "side-business-independence",
   "community-salon": "romance-marriage",
   other: "side-business-independence",
 };
