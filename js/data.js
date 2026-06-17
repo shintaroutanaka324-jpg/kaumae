@@ -48,6 +48,33 @@ const CATEGORY_SHORT_LABELS = {
   other: "その他",
 };
 
+/** カテゴリ別のデフォルトサムネイル（images/categories/） */
+const CATEGORY_IMAGE_FILES = {
+  "career-job-change": "images/categories/career-job-change.png",
+  "romance-marriage": "images/categories/romance-marriage.png",
+  "side-business-independence": "images/categories/side-business-independence.png",
+  "ai-it-skills": "images/categories/ai-it-skills.png",
+  "web-marketing": "images/categories/web-marketing.png",
+  "sales-business-skills": "images/categories/sales-business-skills.png",
+};
+
+/** 専用画像がないカテゴリの代替 */
+const CATEGORY_IMAGE_FALLBACKS = {
+  "certification-exam": "career-job-change",
+  "english-language": "career-job-change",
+  "money-asset-building": "side-business-independence",
+  "health-lifestyle": "side-business-independence",
+  "community-salon": "romance-marriage",
+  other: "side-business-independence",
+};
+
+function getCategoryImageUrl(category) {
+  const key = category || "other";
+  if (CATEGORY_IMAGE_FILES[key]) return CATEGORY_IMAGE_FILES[key];
+  const fallbackKey = CATEGORY_IMAGE_FALLBACKS[key] || CATEGORY_IMAGE_FALLBACKS.other;
+  return CATEGORY_IMAGE_FILES[fallbackKey] || "";
+}
+
 const SITE_STATS = {
   serviceCount: 0,
   reviewCount: 0,

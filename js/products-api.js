@@ -37,6 +37,16 @@
     }
   }
 
+  function resolveProductImageUrl(row) {
+    const custom = String(row?.image_url || "").trim();
+    if (custom) return custom;
+    if (typeof getCategoryImageUrl === "function") {
+      const categoryImage = getCategoryImageUrl(row?.category);
+      if (categoryImage) return categoryImage;
+    }
+    return DEFAULT_IMAGE;
+  }
+
   function rowToProduct(row) {
     return {
       id: row.id,
@@ -45,7 +55,7 @@
       category: row.category,
       price: Number(row.price) || 0,
       platform: row.platform || "オンライン",
-      imageUrl: row.image_url || DEFAULT_IMAGE,
+      imageUrl: resolveProductImageUrl(row),
       description: row.description || "",
       averageRating: Number(row.average_rating) || 0,
       reviewCount: Number(row.review_count) || 0,
