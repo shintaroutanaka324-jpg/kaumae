@@ -527,8 +527,7 @@
   overflow: hidden;
 }
 
-.pd2-rc-body-text,
-.pd2-paywall-preview {
+.pd2-rc-body-text {
   font-size: 0.8125rem;
   line-height: 1.7;
   color: var(--gray-700);
@@ -636,7 +635,11 @@
 }
 
 .pd2-rc-compact-body .pd2-paywall-locked {
-  height: 4.5rem;
+  height: 5.5rem;
+}
+
+.pd2-rc-compact-body .pd2-paywall-copy {
+  bottom: 3.25rem;
 }
 
 /* --- サイドバー --- */
@@ -815,40 +818,54 @@
   overflow: hidden;
 }
 
-.pd2-paywall-preview {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  overflow: hidden;
-  max-height: calc(0.8125rem * 1.7);
-  white-space: normal;
-}
-
 .pd2-paywall-locked {
   position: relative;
-  margin-top: 0.35rem;
-  height: 9.5rem;
+  height: 11.25rem;
   overflow: hidden;
   user-select: none;
   isolation: isolate;
 }
 
-.pd2-paywall-body {
+.pd2-paywall-copy {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 5.5rem;
+  overflow: hidden;
+}
+
+.pd2-paywall-blur-all,
+.pd2-paywall-clear-top {
+  margin: 0;
+  padding: 0 0.1rem 0 0;
   font-size: 0.8125rem;
   line-height: 1.7;
   color: var(--gray-700);
-  margin: 0;
-  padding: 0 0.15rem 2.5rem 0;
-  max-height: 100%;
-  overflow: hidden;
-  white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
-  filter: blur(3px);
-  opacity: 0.82;
+  white-space: normal;
+}
+
+.pd2-paywall-blur-all {
+  min-height: 100%;
+  filter: blur(4px);
+  opacity: 0.8;
   pointer-events: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+.pd2-paywall-clear-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  max-height: calc(0.8125rem * 1.7 * 2);
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 62%, transparent 100%);
 }
 
 .pd2-paywall-fade {
@@ -857,9 +874,10 @@
   background: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.35) 45%,
-    rgba(255, 255, 255, 0.85) 78%,
-    #fff 100%
+    rgba(255, 255, 255, 0.15) 22%,
+    rgba(255, 255, 255, 0.55) 42%,
+    rgba(255, 255, 255, 0.9) 68%,
+    #fff 88%
   );
   pointer-events: none;
 }

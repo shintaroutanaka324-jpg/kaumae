@@ -609,7 +609,24 @@ function getRelatedProducts(product) {
     .slice(0, 8);
 }
 
-const PREVIEW_CHAR_LIMIT = 15;
+const PAYWALL_BLUR_FILLER =
+  "続きの内容は会員登録または口コミ投稿で閲覧できます。実際の受講体験に基づく詳しい評価や具体的なアドバイスが記載されています。";
+
+function isPlaceholderBody(text) {
+  const raw = String(text || "").trim();
+  return !raw || raw === "—" || raw === "－" || raw === "-" || raw === "（記載なし）";
+}
+
+function getPaywallDisplayText(text) {
+  const raw = String(text || "").trim();
+  if (isPlaceholderBody(raw)) {
+    return PAYWALL_BLUR_FILLER.repeat(4);
+  }
+  if (raw.length < 120) {
+    return `${raw} ${PAYWALL_BLUR_FILLER}`;
+  }
+  return raw;
+}
 
 function renderUnlockBanner() {
   return `
@@ -629,17 +646,6 @@ function renderUnlockBanner() {
     </div>`;
 }
 
-function truncatePreview(text, limit = PREVIEW_CHAR_LIMIT) {
-  const chars = [...String(text || "")];
-  if (!chars.length) return "（記載なし）";
-  if (chars.length <= limit) return chars.join("");
-  return chars.slice(0, limit).join("");
-}
-
-function hasMoreThanPreview(text, limit = PREVIEW_CHAR_LIMIT) {
-  return [...String(text || "")].length > limit;
-}
-
 function renderPaywallCta(showActions = true) {
   if (!showActions) return "";
   return `
@@ -656,22 +662,6 @@ function renderPaywallCta(showActions = true) {
         <a href="submit-review.html" class="btn btn-outline-trust btn-sm">口コミを投稿</a>
       </div>
     </div>`;
-}
-
-function getLockedBodyText(text, skipHead = false) {
-  const raw = String(text || "（記載なし）");
-  if (!skipHead) return raw;
-  const chars = [...raw];
-  const remainder = chars.length > PREVIEW_CHAR_LIMIT ? chars.slice(PREVIEW_CHAR_LIMIT).join("") : "";
-  if (remainder.trim()) return remainder;
-  return raw.repeat(6);
-}
-
-function renderLockedBody(text, { skipHead = false } = {}) {
-  const body = getLockedBodyText(text, skipHead);
-  return `
-    <p class="pd2-paywall-body" aria-hidden="true">${App.escapeHtml(body)}</p>
-    <div class="pd2-paywall-fade"></div>`;
 }
 
 function renderRelatedCard(p) {
@@ -726,13 +716,16 @@ function renderLockableContent(text, unlocked, { showCta = true, className = "pd
     return `<p class="${className}">${App.escapeHtml(raw)}</p>`;
   }
 
-  const preview = App.escapeHtml(truncatePreview(raw));
+  const displayText = App.escapeHtml(getPaywallDisplayText(raw));
 
   return `
     <div class="pd2-paywall">
-      <p class="pd2-paywall-preview">${preview}</p>
       <div class="pd2-paywall-locked">
-        ${renderLockedBody(raw, { skipHead: true })}
+        <div class="pd2-paywall-copy">
+          <p class="pd2-paywall-blur-all" aria-hidden="true">${displayText}</p>
+          <p class="pd2-paywall-clear-top">${displayText}</p>
+        </div>
+        <div class="pd2-paywall-fade"></div>
         ${renderPaywallCta(showCta)}
       </div>
     </div>`;
