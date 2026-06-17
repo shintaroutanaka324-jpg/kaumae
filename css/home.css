@@ -176,12 +176,19 @@
 }
 
 .home-hero-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
   font-size: clamp(2rem, 4.2vw, 3.5rem);
   font-weight: 800;
-  line-height: 1.38;
+  line-height: 1.28;
   letter-spacing: -0.03em;
   margin: 0 0 1.15rem;
   color: var(--home-text);
+}
+
+.home-hero-title-line {
+  display: block;
 }
 
 .home-hero-em {
@@ -281,13 +288,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.home-hero-visual-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, #f8fbfa 0%, rgba(248, 251, 250, 0.92) 12%, transparent 38%),
+    linear-gradient(180deg, transparent 72%, rgba(248, 251, 250, 0.55) 88%, #f8fbfa 100%),
+    linear-gradient(270deg, transparent 55%, rgba(236, 253, 245, 0.45) 82%, rgba(236, 253, 245, 0.75) 100%);
 }
 
 .home-hero-glow {
   position: absolute;
-  inset: 8% 0 5% 10%;
+  inset: 5% -5% 0 5%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(167, 243, 208, 0.3) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 55% 45%, rgba(167, 243, 208, 0.42) 0%, rgba(167, 243, 208, 0.12) 42%, transparent 72%);
   z-index: 0;
   pointer-events: none;
 }
@@ -302,7 +322,15 @@
   margin: 0 auto;
   object-fit: contain;
   object-position: center;
-  filter: drop-shadow(0 18px 36px rgba(15, 23, 42, 0.1));
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 10%, #000 22%, #000 78%, rgba(0, 0, 0, 0.5) 92%, transparent 100%),
+    linear-gradient(180deg, #000 0%, #000 82%, transparent 100%);
+  mask-image:
+    linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 10%, #000 22%, #000 78%, rgba(0, 0, 0, 0.5) 92%, transparent 100%),
+    linear-gradient(180deg, #000 0%, #000 82%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  filter: drop-shadow(0 14px 28px rgba(5, 150, 105, 0.08));
 }
 
 /* --- Trust --- */
@@ -815,12 +843,24 @@
   }
 
   .home-hero-glow {
-    display: none;
+    inset: 0 -8%;
+  }
+
+  .home-hero-visual-stage::before {
+    background:
+      linear-gradient(180deg, transparent 70%, rgba(248, 251, 250, 0.6) 90%, #f8fbfa 100%),
+      linear-gradient(90deg, transparent 78%, rgba(236, 253, 245, 0.35) 100%);
   }
 
   .home-hero-person {
     width: min(100%, 20rem);
     margin: 0 auto;
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%),
+      linear-gradient(180deg, #000 0%, #000 80%, transparent 100%);
+    mask-image:
+      linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%),
+      linear-gradient(180deg, #000 0%, #000 80%, transparent 100%);
   }
 
   .home-trust-grid,
