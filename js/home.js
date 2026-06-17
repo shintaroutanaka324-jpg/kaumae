@@ -1,12 +1,82 @@
 const SEARCH_HINTS = [
+  "サービス名・講師名・スクール名で検索できます",
   "例：○○コーチ / ○○スクール / ○○塾",
-  "サービス名で検索",
-  "講師名で検索",
-  "SNSアカウント名で検索",
 ];
 
-const HOME_REVIEWS_LIMIT = 6;
-const HOME_REVIEWS_PER_PAGE = 3;
+const HOME_REVIEWS_DISPLAY = 3;
+
+const HOME_CATEGORY_META = [
+  {
+    value: "career-job-change",
+    label: "キャリア・転職",
+    desc: "転職支援・キャリア相談",
+    icon: "career",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  },
+  {
+    value: "romance-marriage",
+    label: "恋愛・婚活",
+    desc: "婚活・恋愛コーチング",
+    icon: "romance",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.4-7 10-7 10z"/></svg>',
+  },
+  {
+    value: "side-business-independence",
+    label: "副業・独立",
+    desc: "副業スクール・起業支援",
+    icon: "side",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 20h8"/></svg>',
+  },
+  {
+    value: "ai-it-skills",
+    label: "AI・ITスキル",
+    desc: "AI活用・プログラミング",
+    icon: "ai",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h.01M15 9h.01M9 15h6"/></svg>',
+  },
+  {
+    value: "web-marketing",
+    label: "Webマーケティング",
+    desc: "集客・SNS・広告運用",
+    icon: "web",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 17v-4M12 17V9M16 17v-6"/></svg>',
+  },
+  {
+    value: "sales-business-skills",
+    label: "営業・ビジネススキル",
+    desc: "営業力・提案力の向上",
+    icon: "sales",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 11h10M7 15h6"/><path d="M6 4h12l2 4H4l2-4z"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/></svg>',
+  },
+  {
+    value: "health-lifestyle",
+    label: "健康・ライフスタイル",
+    desc: "健康習慣・メンタルケア",
+    icon: "health",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-6-4.35-6-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.65-6 10-6 10z"/></svg>',
+  },
+  {
+    value: "certification-exam",
+    label: "資格・試験",
+    desc: "資格取得・試験対策講座",
+    icon: "cert",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4h12v16l-6-3-6 3V4z"/></svg>',
+  },
+  {
+    value: "english-language",
+    label: "英語・語学",
+    desc: "英語学習・語学コーチング",
+    icon: "english",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>',
+  },
+  {
+    value: "money-asset-building",
+    label: "マネー・資産形成",
+    desc: "投資・資産運用・家計管理",
+    icon: "money",
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="8" rx="7" ry="3"/><path d="M5 8v8c0 1.7 3.1 3 7 3s7-1.3 7-3V8"/></svg>',
+  },
+];
 
 function renderStarsInline(rating) {
   const full = Math.round(rating);
@@ -21,7 +91,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   await App.whenReady();
 
   initHeroSearch();
-  renderTrending();
   renderCategories();
   renderReviews();
   renderReviewCountLabel();
@@ -43,11 +112,10 @@ function renderReviewCountLabel() {
   if (!el) return;
 
   const total = typeof getAllReviewsMerged === "function" ? getAllReviewsMerged().length : REVIEWS.length;
-  const latestCount = Math.min(HOME_REVIEWS_LIMIT, total);
   el.textContent =
     total > 0
-      ? `承認済みの口コミから最新${latestCount}件を表示しています（全${total}件）`
-      : "購入証明を提出した口コミには「購入証明済み」バッジが付きます（提出は任意）";
+      ? `承認済みの口コミから最新${Math.min(HOME_REVIEWS_DISPLAY, total)}件を表示しています`
+      : "";
 }
 
 function initHeroSearch() {
@@ -68,44 +136,40 @@ function initHeroSearch() {
     setInterval(() => {
       i = (i + 1) % SEARCH_HINTS.length;
       hint.textContent = SEARCH_HINTS[i];
-    }, 4000);
+    }, 5000);
   }
-}
-
-function renderTrending() {
-  const wrap = document.getElementById("home-trending-wrap");
-  const el = document.getElementById("home-trending");
-  if (!el || typeof TRENDING_SEARCHES === "undefined") return;
-
-  const items = TRENDING_SEARCHES.slice(0, 4);
-  if (!items.length) {
-    if (wrap) wrap.hidden = true;
-    return;
-  }
-  if (wrap) wrap.hidden = false;
-  el.innerHTML = items
-    .map((t) => {
-      const hint = t.hint ? `（${App.escapeHtml(t.hint)}）` : "";
-      return `<a href="reviews.html?search=${encodeURIComponent(t.query)}" class="trending-tag trending-tag--rich trending-tag--cell">${App.escapeHtml(t.label)}<span class="trending-tag-hint">${hint}</span></a>`;
-    })
-    .join("");
 }
 
 function renderCategories() {
   const el = document.getElementById("home-categories");
   if (!el) return;
 
-  el.innerHTML = CATEGORIES.map(
-    (c) =>
-      `<a href="reviews.html?genre=${c.value}" class="category-chip">${App.escapeHtml(c.label)}</a>`
+  const cards = HOME_CATEGORY_META.map(
+    (c) => `
+    <a href="reviews.html?genre=${encodeURIComponent(c.value)}" class="home-category-card">
+      <span class="home-category-icon home-category-icon--${c.icon}" aria-hidden="true">${c.svg}</span>
+      <h3 class="home-category-title">${App.escapeHtml(c.label)}</h3>
+      <p class="home-category-desc">${App.escapeHtml(c.desc)}</p>
+    </a>`
   ).join("");
+
+  const searchCta = `
+    <a href="reviews.html" class="home-category-card home-category-card--cta">
+      <span class="home-category-icon home-category-icon--search" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </span>
+      <h3 class="home-category-title">サービス名で検索</h3>
+      <p class="home-category-desc">気になるカテゴリが見つからない場合は、サービス名で検索してみてください。</p>
+    </a>`;
+
+  el.innerHTML = cards + searchCta;
 }
 
 function softenLongRuns(text) {
   return String(text || "").replace(/(\S{24})(?=\S)/g, "$1\u200b");
 }
 
-function excerptText(text, maxLen = 100) {
+function excerptText(text, maxLen = 96) {
   const softened = softenLongRuns(String(text || "").trim());
   const chars = [...softened];
   if (!chars.length) return "";
@@ -129,116 +193,72 @@ function resolveReviewLinks(r, productMap) {
   return { product, serviceName, detailUrl };
 }
 
+function resolveReviewImage(product, r) {
+  if (product?.imageUrl) return product.imageUrl;
+  const category = product?.category || "";
+  if (category && typeof getCategoryImageUrl === "function") {
+    return getCategoryImageUrl(category);
+  }
+  return "images/hero-visual.png";
+}
+
+function formatReviewerMeta(r, categoryLabel) {
+  const parts = [];
+  if (categoryLabel && categoryLabel !== "—") parts.push(categoryLabel);
+  const demo = [r.age, r.gender].filter(Boolean).join("");
+  if (demo) parts.push(demo);
+  return parts.join(" / ") || "—";
+}
+
 function renderReviewCardHtml(r, productMap) {
   const { product, serviceName, detailUrl } = resolveReviewLinks(r, productMap);
   const rating = r.rating || 4;
-  const category = product ? getCategoryLabel(product.category) : "—";
-  const badges = renderReviewTrustBadges(r, { large: true });
-  const noBadgeNote = hasAnyTrustBadge(r)
-    ? ""
-    : `<p class="review-no-badge">購入記録未提出の口コミ</p>`;
-  const dbBadge = r._fromDb ? `<span class="review-feed-db-badge">新着</span>` : "";
-  const title = excerptText(r.title, 48);
-  const body = excerptText(r.content, 100);
-  const showReadMore = [...String(r.content || "")].length > 100 || [...String(r.title || "")].length > 48;
+  const categoryLabel = product ? getCategoryLabel(product.category) : "—";
+  const imageUrl = resolveReviewImage(product, r);
+  const body = excerptText(r.content, 96);
+  const proofBadge = r.verifiedPurchase
+    ? `<span class="home-review-proof">購入証明</span>`
+    : "";
 
   return `
-      <article class="review-feed-card review-feed-card--primary">
-        <header class="review-feed-header">
-          <div class="review-feed-rating-large">
-            <span class="rating-big">${rating.toFixed(1)}</span>
-            <span class="stars">${renderStarsInline(rating)}</span>
-          </div>
-          <time class="review-feed-date" datetime="${App.escapeHtml(r.date)}">${formatDateJa(r.date)}</time>
-        </header>
-        ${badges}
-        ${dbBadge}
-        ${noBadgeNote}
-        <a href="${detailUrl}" class="review-feed-service-name review-feed-service-name--lg">${App.escapeHtml(serviceName)}</a>
-        <p class="review-feed-instructor">${App.escapeHtml(category)}</p>
-        <h3 class="review-feed-title review-feed-title--lg">${App.escapeHtml(title)}</h3>
-        <p class="review-feed-body review-feed-body--lg">${App.escapeHtml(body)}</p>
-        <footer class="review-feed-footer">
-          <span class="review-feed-user">${App.escapeHtml(normalizeReviewerDisplayName(r.userName))}${r.age ? `（${App.escapeHtml(r.age)}）` : ""}</span>
-          <a href="${detailUrl}" class="review-feed-link">${showReadMore ? "続きを読む →" : "詳細を見る →"}</a>
+    <article class="home-review-card">
+      <a href="${detailUrl}" class="home-review-thumb" tabindex="-1" aria-hidden="true">
+        <img src="${App.escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async" />
+        ${proofBadge}
+      </a>
+      <div class="home-review-body">
+        <a href="${detailUrl}" class="home-review-name">${App.escapeHtml(serviceName)}</a>
+        <div class="home-review-rating" aria-label="評価 ${rating.toFixed(1)}">
+          <span class="stars">${renderStarsInline(rating)}</span>
+          <strong>${rating.toFixed(1)}</strong>
+        </div>
+        <p class="home-review-excerpt">${App.escapeHtml(body || "口コミの詳細はサービスページでご確認いただけます。")}</p>
+        <footer class="home-review-meta">
+          <span>${App.escapeHtml(formatReviewerMeta(r, categoryLabel))}</span>
+          <time datetime="${App.escapeHtml(r.date)}">${formatDateJa(r.date)}</time>
         </footer>
-      </article>`;
+      </div>
+    </article>`;
 }
 
 function renderReviews() {
-  const track = document.getElementById("home-reviews");
-  const carousel = document.getElementById("home-reviews-carousel");
-  if (!track || typeof REVIEWS === "undefined") return;
+  const grid = document.getElementById("home-reviews");
+  if (!grid || typeof REVIEWS === "undefined") return;
 
   const productMap = Object.fromEntries(getAllProducts().map((p) => [p.id, p]));
   const items =
-    typeof getLatestReviews === "function" ? getLatestReviews(HOME_REVIEWS_LIMIT) : [...REVIEWS];
-  const pages = [];
+    typeof getLatestReviews === "function"
+      ? getLatestReviews(HOME_REVIEWS_DISPLAY)
+      : [...REVIEWS].slice(0, HOME_REVIEWS_DISPLAY);
 
-  for (let i = 0; i < items.length; i += HOME_REVIEWS_PER_PAGE) {
-    pages.push(items.slice(i, i + HOME_REVIEWS_PER_PAGE));
-  }
-
-  if (pages.length === 0) {
-    track.innerHTML = `
-      <div class="reviews-carousel-slide review-feed review-feed--primary">
-        <p class="review-feed-empty">まだ公開中の口コミがありません。<a href="submit-review.html">最初の口コミを投稿</a>してください。</p>
+  if (!items.length) {
+    grid.innerHTML = `
+      <div class="home-review-empty">
+        現在、口コミを募集中です。あなたの体験が、次に購入する人の判断材料になります。<br>
+        <a href="submit-review.html">口コミを投稿する</a>
       </div>`;
-    if (carousel) {
-      carousel.classList.add("reviews-carousel--single");
-    }
     return;
   }
 
-  track.innerHTML = pages
-    .map(
-      (page) =>
-        `<div class="reviews-carousel-slide review-feed review-feed--primary">${page
-          .map((r) => renderReviewCardHtml(r, productMap))
-          .join("")}</div>`
-    )
-    .join("");
-
-  if (carousel) {
-    initReviewsCarousel(carousel, track, pages.length);
-  }
-}
-
-function initReviewsCarousel(carousel, track, pageCount) {
-  const prevBtn = document.getElementById("home-reviews-prev");
-  const nextBtn = document.getElementById("home-reviews-next");
-  if (!prevBtn || !nextBtn) return;
-
-  let pageIndex = 0;
-
-  const update = () => {
-    track.style.transform = `translateX(-${pageIndex * 100}%)`;
-    prevBtn.disabled = pageIndex === 0;
-    nextBtn.disabled = pageIndex >= pageCount - 1;
-    carousel.classList.toggle("reviews-carousel--end", pageIndex >= pageCount - 1);
-  };
-
-  prevBtn.onclick = () => {
-    if (pageIndex > 0) {
-      pageIndex -= 1;
-      update();
-    }
-  };
-
-  nextBtn.onclick = () => {
-    if (pageIndex < pageCount - 1) {
-      pageIndex += 1;
-      update();
-    }
-  };
-
-  carousel.classList.remove("reviews-carousel--single", "reviews-carousel--end");
-  if (pageCount <= 1) {
-    nextBtn.disabled = true;
-    prevBtn.disabled = true;
-    carousel.classList.add("reviews-carousel--single");
-  }
-
-  pageIndex = 0;
-  update();
+  grid.innerHTML = items.map((r) => renderReviewCardHtml(r, productMap)).join("");
 }

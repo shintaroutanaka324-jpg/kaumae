@@ -3,173 +3,179 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="カウマエは、情報商材・オンライン講座・コーチングの購入前口コミレポート。実際の購入者の評価で失敗を防ぐ。" />
+  <meta name="description" content="カウマエは、SNSで見かけたオンライン講座・コーチング・スクールの購入前口コミサイト。受講者の本音を確認してから申し込めます。" />
   <title>購入前口コミレビュー | カウマエ</title>
   <link rel="stylesheet" href="css/styles.css?v=20260613chrome" />
+  <link rel="stylesheet" href="css/home.css?v=20260606home" />
 </head>
-<body class="page-home">
+<body class="page-home page-home-v2">
   <div id="site-header"></div>
 
-  <main>
-    <!-- 1. ファーストビュー（検索主役） -->
-    <section class="hero-search-section hero-search-section--search-first hero-search-section--with-visual">
-      <div class="hero-visual-banner" aria-hidden="true">
-        <img
-          src="images/hero-visual.png"
-          alt=""
-          width="1920"
-          height="1080"
-          loading="eager"
-          decoding="async"
-        />
-        <div class="hero-visual-banner-overlay"></div>
-      </div>
-      <div class="container hero-search-container">
-        <div class="hero-search-flow">
-          <div class="hero-fv-card">
-            <header class="hero-search-head">
-              <h1>購入前に、<span class="text-trust">本音の口コミ</span>を確認する</h1>
-              <p class="hero-search-desc">
-                オンライン講座・コーチング・情報商材・SNS販売のサービスについて、
-                購入者のリアルな口コミで申し込み前の失敗を防ぎます。
-              </p>
-            </header>
+  <main class="home-main">
+    <!-- 1. ファーストビュー -->
+    <section class="home-hero" aria-labelledby="home-hero-title">
+      <div class="container home-hero-inner">
+        <div class="home-hero-copy">
+          <h1 id="home-hero-title" class="home-hero-title">
+            買う前に、受講者の<span class="home-hero-em">本音</span>を。
+          </h1>
+          <p class="home-hero-lead">
+            SNSで見かけたオンライン講座・コーチング・スクールの口コミを、購入前に確認できます。
+          </p>
 
-            <div class="hero-search-hero">
-              <form class="hero-search-form hero-search-form--prominent" id="hero-search-form" role="search">
-                <label class="sr-only" for="hero-search-input">サービス名・講師名で検索</label>
-                <div class="hero-search-input-wrap hero-search-input-wrap--prominent">
-                  <svg class="hero-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                  <input
-                    type="search"
-                    id="hero-search-input"
-                    class="hero-search-input"
-                    placeholder="サービス名・講師名・SNSアカウント名で検索"
-                    autocomplete="off"
-                  />
-                  <button type="submit" class="hero-search-submit">口コミを検索</button>
-                </div>
-                <p class="hero-search-hint" id="hero-search-hint">例：○○コーチ / ○○スクール / ○○塾 / ○○アカデミー</p>
-              </form>
+          <form class="home-search-form" id="hero-search-form" role="search">
+            <label class="sr-only" for="hero-search-input">サービス名・講師名・スクール名で検索</label>
+            <div class="home-search-wrap">
+              <input
+                type="search"
+                id="hero-search-input"
+                class="home-search-input"
+                placeholder="サービス名・講師名・スクール名で検索"
+                autocomplete="off"
+              />
+              <button type="submit" class="home-search-btn" aria-label="検索">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              </button>
             </div>
+            <p class="home-search-note" id="hero-search-hint">サービス名・講師名・スクール名で検索できます</p>
+          </form>
+        </div>
 
-            <div class="hero-fv-trending trending-search trending-search--in-card trending-search--row4" id="home-trending-wrap">
-              <p class="trending-search-heading"><span class="trending-fire" aria-hidden="true">🔥</span> 今話題</p>
-              <div class="trending-tags" id="home-trending"></div>
-            </div>
+        <div class="home-hero-visual" aria-hidden="true">
+          <div class="home-hero-visual-frame">
+            <img
+              src="images/hero-visual.png"
+              alt=""
+              width="640"
+              height="480"
+              loading="eager"
+              decoding="async"
+            />
           </div>
-
-          <aside class="hero-about-promo" aria-labelledby="platform-about-title">
-            <div class="hero-about-promo-head">
-              <p class="hero-about-promo-badge">購入前の口コミ検索サイト</p>
-              <h2 id="platform-about-title" class="hero-about-promo-title">
-                買う前に、<span class="hero-about-promo-em">受講者の本音</span>を。
-              </h2>
-            </div>
-            <div class="hero-about-promo-body">
-              <div class="hero-about-promo-copy">
-                <p class="hero-about-promo-lead">
-                  オンライン講座やコーチングは、<span class="hero-about-promo-highlight">実際に受講してみるまで分からない</span>ことがたくさんあります。
-                </p>
-                <p class="hero-about-promo-desc">
-                  <span class="hero-about-promo-brand">カウマエ</span>は、受講者の<span class="hero-about-promo-highlight">リアルな体験談</span>を集めた口コミサイトです。
-                </p>
-                <p class="hero-about-promo-callout">
-                  <span class="hero-about-promo-good">良かった点</span>も、<span class="hero-about-promo-con">後悔した点</span>も。<br />
-                  購入前に知っておきたかった情報を、<span class="hero-about-promo-highlight">次の受講者へ届けます</span>。
-                </p>
-              </div>
-            </div>
-          </aside>
+          <div class="home-float-cards">
+            <article class="home-float-card home-float-card--1">
+              <div class="home-float-stars" aria-hidden="true">★★★★★</div>
+              <span class="home-float-score">4.6</span>
+              <p>講義がとても分かりやすく、実践ですぐに使えました！</p>
+              <span class="home-float-meta">Webマーケティング / 30代女性</span>
+            </article>
+            <article class="home-float-card home-float-card--2">
+              <div class="home-float-stars" aria-hidden="true">★★★★☆</div>
+              <span class="home-float-score">3.8</span>
+              <p>サポートが丁寧で安心して取り組めました。</p>
+              <span class="home-float-meta">キャリア講座 / 20代男性</span>
+            </article>
+            <article class="home-float-card home-float-card--3">
+              <div class="home-float-stars" aria-hidden="true">★★★☆☆</div>
+              <span class="home-float-score">3.2</span>
+              <p>内容は良かったですが、価格はやや高めに感じます。</p>
+              <span class="home-float-meta">副業スクール / 20代女性</span>
+            </article>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 2. 最新口コミ（主役） -->
-    <section class="section section-reviews-primary">
+    <!-- 2. 信頼要素 -->
+    <section class="home-trust" aria-label="カウマエの信頼ポイント">
       <div class="container">
-        <div class="reviews-primary-head">
+        <div class="home-trust-grid">
+          <article class="home-trust-card">
+            <div class="home-trust-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+            </div>
+            <h2 class="home-trust-title">匿名口コミ</h2>
+            <p>ニックネームで投稿できるので安心してご利用いただけます。</p>
+          </article>
+          <article class="home-trust-card">
+            <div class="home-trust-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 7v5c0 4.4 3.4 8.5 8 9 4.6-.5 8-4.6 8-9V7l-8-4z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <h2 class="home-trust-title">購入証明バッジ</h2>
+            <p>領収書や決済画面の提出で信頼性の高い口コミに。</p>
+          </article>
+          <article class="home-trust-card">
+            <div class="home-trust-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            </div>
+            <h2 class="home-trust-title">個人情報は非公開</h2>
+            <p>提出いただいた情報はモザイク処理を行い、公開しません。</p>
+          </article>
+          <article class="home-trust-card">
+            <div class="home-trust-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
+            </div>
+            <h2 class="home-trust-title">投稿前チェックあり</h2>
+            <p>運営による確認を行い、安心できる口コミのみを掲載しています。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 最新口コミ -->
+    <section class="home-reviews-section" aria-labelledby="home-reviews-title">
+      <div class="container">
+        <div class="home-section-head">
           <div>
-            <h2 class="reviews-primary-title">最新の購入者口コミ</h2>
-            <p class="reviews-primary-count" id="home-review-count"></p>
+            <h2 id="home-reviews-title" class="home-section-title">
+              <span class="home-section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+              </span>
+              最新の購入者口コミ
+            </h2>
+            <p class="home-section-sub" id="home-review-count"></p>
           </div>
-          <a href="reviews.html" class="btn btn-trust">すべての口コミを見る</a>
+          <a href="reviews.html" class="home-section-link">すべて見る →</a>
         </div>
-        <div class="reviews-carousel" id="home-reviews-carousel">
-          <button
-            type="button"
-            class="reviews-carousel-nav reviews-carousel-nav--prev"
-            id="home-reviews-prev"
-            aria-label="前の口コミ"
-            disabled
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-          </button>
-          <div class="reviews-carousel-viewport">
-            <div class="reviews-carousel-track" id="home-reviews"></div>
-          </div>
-          <button
-            type="button"
-            class="reviews-carousel-nav reviews-carousel-nav--next"
-            id="home-reviews-next"
-            aria-label="次の口コミ"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-          </button>
-        </div>
+        <div class="home-reviews-grid" id="home-reviews"></div>
       </div>
     </section>
 
-    <!-- 3. 購入証明バッジ -->
-    <section class="section-trust-strip">
+    <!-- 4. カテゴリ -->
+    <section class="home-categories-section" id="categories" aria-labelledby="home-categories-title">
       <div class="container">
-        <h2 class="trust-strip-title">購入証明バッジについて</h2>
-        <p class="trust-strip-lead">
-          購入証明の提出は<strong>任意</strong>です。領収書・決済画面などを提出いただいた口コミに、
-          「購入証明済み」バッジが付きます。本人確認などの追加認証はありません。
-        </p>
-        <div class="trust-badge-showcase">
-          <div class="trust-badge-lg trust-badge--purchase">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>
-            <span>購入証明済み</span>
-            <small>購入証明を提出した口コミ</small>
-          </div>
-        </div>
-        <ul class="trust-strip-points">
-          <li>バッジのない口コミも掲載されます</li>
-          <li>購入証明はモザイク処理され、氏名・住所・電話番号・メールアドレスなどは公開されません</li>
-          <li>口コミ本文は匿名（ニックネーム）で公開されます</li>
-        </ul>
-        <p class="trust-strip-note"><a href="submit-guidelines.html">口コミ投稿ガイドライン</a> · <a href="faq.html#badges">Q&amp;A</a></p>
+        <h2 id="home-categories-title" class="home-section-title home-section-title--center">
+          <span class="home-section-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+          </span>
+          カテゴリから口コミを探す
+        </h2>
+        <div class="home-categories-grid" id="home-categories"></div>
       </div>
     </section>
 
-    <!-- 4. カテゴリー（コンパクト） -->
-    <section class="section section-categories-compact">
-      <div class="container">
-        <h2 class="section-title-left section-title-sm">カテゴリから口コミを探す</h2>
-        <div class="category-chips" id="home-categories"></div>
-      </div>
-    </section>
-
-    <!-- 5. 口コミ投稿CTA -->
-    <section class="section-post-cta section-post-cta--final">
-      <div class="container">
-        <div class="post-cta-banner post-cta-banner--strong">
-          <div class="post-cta-copy">
-            <p class="post-cta-eyebrow">購入者のあなたへ</p>
-            <h2>あなたの口コミが次の受講者の判断材料になる</h2>
-            <ul class="post-cta-benefits">
-              <li><strong>口コミを投稿すると</strong> — すべての口コミを閲覧できます</li>
-              <li><strong>本音の口コミを増やして</strong> — 納得できるサービス選びを支えよう</li>
-              <li>購入後の「思っていたのと違う」を減らそう</li>
-            </ul>
-          </div>
-          <div class="post-cta-actions">
-            <a href="submit-review.html" class="btn btn-trust btn-lg btn-block">無料で口コミを投稿する</a>
-            <p class="post-cta-note">匿名可 · 購入記録を提出すると「購入証明済み」バッジが付きます</p>
+    <!-- 5. 使い方 -->
+    <section class="home-howto" aria-labelledby="home-howto-title">
+      <div class="container home-howto-inner">
+        <div class="home-howto-main">
+          <h2 id="home-howto-title" class="home-section-title">
+            <span class="home-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></svg>
+            </span>
+            カウマエの使い方
+          </h2>
+          <div class="home-steps">
+            <article class="home-step-card">
+              <span class="home-step-num">1</span>
+              <h3>気になるサービス名で検索</h3>
+              <p>講座名・講師名・スクール名から、気になるサービスを探します。</p>
+            </article>
+            <article class="home-step-card">
+              <span class="home-step-num">2</span>
+              <h3>口コミと評価を確認</h3>
+              <p>購入者の評価や体験談を読み、良い点・気になる点を比較します。</p>
+            </article>
+            <article class="home-step-card">
+              <span class="home-step-num">3</span>
+              <h3>納得して申し込むか判断</h3>
+              <p>口コミを参考に、自分に合うかどうかを冷静に判断できます。</p>
+            </article>
           </div>
         </div>
+        <aside class="home-howto-cta">
+          <p class="home-howto-cta-lead">あなたの口コミが誰かの未来を助けます</p>
+          <a href="submit-review.html" class="btn btn-trust home-howto-cta-btn">口コミを投稿する</a>
+        </aside>
       </div>
     </section>
   </main>
@@ -178,6 +184,6 @@
 
   <script src="js/data.js"></script>
   <script src="js/app.js?v=20260613adminmenu"></script>
-  <script src="js/home.js?v=20260613reviewer"></script>
+  <script src="js/home.js?v=20260606home"></script>
 </body>
 </html>
