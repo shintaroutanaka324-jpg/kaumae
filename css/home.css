@@ -138,10 +138,10 @@
 /* --- Hero --- */
 .home-hero {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   padding: 1.25rem 0 2rem;
   min-height: 600px;
-  background: linear-gradient(125deg, #fff 0%, #f8fbfa 42%, #ecfdf5 100%);
+  background: linear-gradient(125deg, #fff 0%, #fff 38%, #f8fbfa 62%, #ecfdf5 100%);
 }
 
 .home-hero::before {
@@ -163,8 +163,8 @@
 
 .home-hero-inner {
   display: grid;
-  grid-template-columns: 48fr 52fr;
-  gap: 1rem 2rem;
+  grid-template-columns: 46fr 54fr;
+  gap: 0.5rem 1.5rem;
   align-items: center;
   min-height: 600px;
   max-height: 680px;
@@ -276,38 +276,36 @@
   min-height: 520px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  overflow: visible;
 }
 
 .home-hero-visual-stage {
   position: relative;
   width: 100%;
-  max-width: 36rem;
-  min-height: 420px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  max-width: 38rem;
+  min-height: 520px;
+  margin: 0 -2% 0 auto;
+  overflow: visible;
 }
 
 .home-hero-visual-stage::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: -2%;
+  width: 42%;
+  height: 100%;
   z-index: 2;
   pointer-events: none;
-  background:
-    linear-gradient(90deg, #f8fbfa 0%, rgba(248, 251, 250, 0.92) 12%, transparent 38%),
-    linear-gradient(180deg, transparent 72%, rgba(248, 251, 250, 0.55) 88%, #f8fbfa 100%),
-    linear-gradient(270deg, transparent 55%, rgba(236, 253, 245, 0.45) 82%, rgba(236, 253, 245, 0.75) 100%);
+  background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.85) 28%, rgba(248, 251, 250, 0.35) 58%, transparent 100%);
 }
 
 .home-hero-glow {
   position: absolute;
-  inset: 5% -5% 0 5%;
+  inset: 8% -12% 2% 18%;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 55% 45%, rgba(167, 243, 208, 0.42) 0%, rgba(167, 243, 208, 0.12) 42%, transparent 72%);
+  background: radial-gradient(ellipse at 58% 42%, rgba(167, 243, 208, 0.38) 0%, rgba(167, 243, 208, 0.1) 48%, transparent 74%);
   z-index: 0;
   pointer-events: none;
 }
@@ -316,21 +314,13 @@
   position: relative;
   z-index: 1;
   display: block;
-  width: clamp(16rem, 100%, 31.25rem);
-  max-width: 31.25rem;
+  width: clamp(18rem, 108%, 36rem);
+  max-width: none;
   height: auto;
-  margin: 0 auto;
+  margin: 0 -4% 0 auto;
   object-fit: contain;
-  object-position: center;
-  -webkit-mask-image:
-    linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 10%, #000 22%, #000 78%, rgba(0, 0, 0, 0.5) 92%, transparent 100%),
-    linear-gradient(180deg, #000 0%, #000 82%, transparent 100%);
-  mask-image:
-    linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 10%, #000 22%, #000 78%, rgba(0, 0, 0, 0.5) 92%, transparent 100%),
-    linear-gradient(180deg, #000 0%, #000 82%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-  filter: drop-shadow(0 14px 28px rgba(5, 150, 105, 0.08));
+  object-position: right center;
+  filter: drop-shadow(0 18px 36px rgba(15, 23, 42, 0.07));
 }
 
 /* --- Trust --- */
@@ -773,14 +763,17 @@
     max-width: 36rem;
     margin: 0 auto;
     min-height: auto;
+    justify-content: center;
   }
 
   .home-hero-visual-stage {
-    min-height: 18rem;
+    min-height: 22rem;
     max-width: 100%;
+    margin: 0 auto;
   }
 
   .home-hero-person {
+    width: clamp(16rem, 100%, 32rem);
     margin: 0 auto;
   }
 
@@ -842,25 +835,18 @@
     min-height: 0;
   }
 
-  .home-hero-glow {
-    inset: 0 -8%;
+  .home-hero-visual-stage::before {
+    width: 30%;
+    background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%);
   }
 
-  .home-hero-visual-stage::before {
-    background:
-      linear-gradient(180deg, transparent 70%, rgba(248, 251, 250, 0.6) 90%, #f8fbfa 100%),
-      linear-gradient(90deg, transparent 78%, rgba(236, 253, 245, 0.35) 100%);
+  .home-hero-glow {
+    inset: 0 -10%;
   }
 
   .home-hero-person {
-    width: min(100%, 20rem);
+    width: min(100%, 22rem);
     margin: 0 auto;
-    -webkit-mask-image:
-      linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%),
-      linear-gradient(180deg, #000 0%, #000 80%, transparent 100%);
-    mask-image:
-      linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%),
-      linear-gradient(180deg, #000 0%, #000 80%, transparent 100%);
   }
 
   .home-trust-grid,
