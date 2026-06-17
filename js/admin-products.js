@@ -6,6 +6,7 @@
     price: 0,
     platform: "",
     imageUrl: "",
+    imageMode: "category",
     description: "",
     highlightPro: "",
     highlightCon: "",
@@ -48,14 +49,56 @@
     ).join("");
   }
 
+  function resolveSelectedCategoryImageUrl(category, storedUrl) {
+    if (storedUrl && typeof isCategoryImagePath === "function" && isCategoryImagePath(storedUrl)) {
+      return storedUrl;
+    }
+    if (typeof getCategoryImageUrl === "function") return getCategoryImageUrl(category) || "";
+    return storedUrl || "";
+  }
+
+  function resolveImageMode(form, product) {
+    if (form.imageMode) return form.imageMode;
+    const raw = String(product?.imageUrlRaw ?? form.imageUrl ?? "").trim();
+    if (!raw) return "auto";
+    if (typeof isCategoryImagePath === "function" && isCategoryImagePath(raw)) return "category";
+    return "upload";
+  }
+
+  function renderCategoryImageGrid(form) {
+    const options =
+      typeof getCategoryImageOptions === "function" ? getCategoryImageOptions() : [];
+    const selectedUrl = resolveSelectedCategoryImageUrl(form.category, form.imageUrl);
+    if (!options.length) {
+      return `<p class="form-hint">カテゴリ画像が見つかりません。</p>`;
+    }
+    return options
+      .map(
+        (opt) => `
+        <button
+          type="button"
+          class="adm-category-image-option${opt.url === selectedUrl ? " is-selected" : ""}"
+          data-category-image="${App.escapeHtml(opt.url)}"
+          aria-pressed="${opt.url === selectedUrl ? "true" : "false"}"
+        >
+          <img src="${App.escapeHtml(opt.url)}" alt="" loading="lazy" decoding="async" />
+          <span>${App.escapeHtml(opt.label)}</span>
+        </button>`
+      )
+      .join("");
+  }
+
   function productToForm(product) {
+    const raw = String(product?.imageUrlRaw ?? "").trim();
+    const imageMode = resolveImageMode({}, product);
     return {
       title: product.title || "",
       instructor: product.instructor || "",
       category: product.category || "other",
       price: product.price ?? "",
       platform: product.platform || "",
-      imageUrl: product.imageUrl || "",
+      imageUrl: raw,
+      imageMode,
       description: product.description || "",
       highlightPro: product.highlightPro || "",
       highlightCon: product.highlightCon || "",
@@ -225,6 +268,16 @@
   }
 
   function renderFormFields(form) {
+    const imageMode = form.imageMode || "category";
+    const previewUrl =
+      imageMode === "upload"
+        ? form.imageUrl || ""
+        : resolveSelectedCategoryImageUrl(form.category, form.imageUrl);
+    const hiddenImageUrl =
+      imageMode === "category"
+        ? resolveSelectedCategoryImageUrl(form.category, form.imageUrl)
+        : form.imageUrl || "";
+
     return `
       <div class="admin-product-grid">
         <div class="admin-field">
@@ -245,23 +298,42 @@
         </div>
         <div class="admin-field admin-field--full">
           <label class="form-label">画像</label>
-          <div class="adm-image-upload">
+          <p class="form-hint">カテゴリ画像から選ぶか、独自画像をアップロードできます。</p>
+          <div class="adm-image-mode">
+            <label>
+              <input type="radio" name="ap-image-mode" value="category" ${imageMode === "category" ? "checked" : ""} />
+              カテゴリ画像から選ぶ
+            </label>
+            <label>
+              <input type="radio" name="ap-image-mode" value="upload" ${imageMode === "upload" ? "checked" : ""} />
+              画像をアップロード
+            </label>
+            <label>
+              <input type="radio" name="ap-image-mode" value="auto" ${imageMode === "auto" ? "checked" : ""} />
+              カテゴリに自動で合わせる
+            </label>
+          </div>
+          <div id="ap-category-image-panel" class="adm-category-image-panel${imageMode === "category" ? "" : " is-hidden"}">
+            <div class="adm-category-image-grid" id="ap-category-image-grid">
+              ${renderCategoryImageGrid(form)}
+            </div>
+          </div>
+          <div id="ap-upload-panel" class="adm-image-upload adm-image-upload-panel${imageMode === "upload" ? "" : " is-hidden"}">
             <img
               id="ap-image-preview"
-              class="adm-image-preview${form.imageUrl ? "" : " is-hidden"}"
-              src="${form.imageUrl ? App.escapeHtml(form.imageUrl) : ""}"
+              class="adm-image-preview${previewUrl ? "" : " is-hidden"}"
+              src="${previewUrl ? App.escapeHtml(previewUrl) : ""}"
               alt=""
               data-current="${App.escapeHtml(form.imageUrl || "")}"
             />
             <label class="adm-image-upload-btn" for="ap-image-file">
               <span class="adm-image-upload-title">画像を選択</span>
               <span class="adm-image-upload-hint">JPEG / PNG / WebP（5MBまで）</span>
-              <span class="adm-image-upload-name" id="ap-image-name">${form.imageUrl ? "現在の画像を使用中" : "未選択"}</span>
+              <span class="adm-image-upload-name" id="ap-image-name">${form.imageUrl && imageMode === "upload" ? "現在の画像を使用中" : "未選択"}</span>
             </label>
             <input type="file" id="ap-image-file" class="adm-image-input" accept="image/jpeg,image/png,image/webp,image/gif" />
           </div>
-          <p class="form-hint">未選択の場合はサイト共通のデフォルト画像が使われます。</p>
-          <input type="hidden" id="ap-image-url" value="${App.escapeHtml(form.imageUrl || "")}" />
+          <input type="hidden" id="ap-image-url" value="${App.escapeHtml(hiddenImageUrl)}" />
         </div>
         <div class="admin-field admin-field--full">
           <label for="ap-description">説明</label>
@@ -317,22 +389,124 @@
     });
 
     bindFormEvents(modalRoot, cachedProducts, close);
-    bindImageUpload(modalRoot);
+    bindImageFields(modalRoot);
   }
 
-  function bindImageUpload(root) {
+  function getImageMode(root) {
+    return root.querySelector('[name="ap-image-mode"]:checked')?.value || "category";
+  }
+
+  function syncCategoryImageSelection(root, category, preferredUrl) {
+    const grid = root.querySelector("#ap-category-image-grid");
+    const hidden = root.querySelector("#ap-image-url");
+    if (!grid || !hidden) return;
+
+    const selectedUrl =
+      preferredUrl || resolveSelectedCategoryImageUrl(category, hidden.value.trim());
+
+    grid.querySelectorAll("[data-category-image]").forEach((btn) => {
+      const isSelected = btn.dataset.categoryImage === selectedUrl;
+      btn.classList.toggle("is-selected", isSelected);
+      btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
+    });
+
+    if (getImageMode(root) === "category") {
+      hidden.value = selectedUrl;
+    }
+  }
+
+  function refreshCategoryImageGrid(root) {
+    const grid = root.querySelector("#ap-category-image-grid");
+    const category = root.querySelector("#ap-category")?.value || "other";
+    if (!grid) return;
+
+    const currentSelected = grid.querySelector(".adm-category-image-option.is-selected")?.dataset
+      .categoryImage;
+    grid.innerHTML = renderCategoryImageGrid({
+      category,
+      imageUrl: currentSelected || "",
+      imageMode: "category",
+    });
+
+    grid.querySelectorAll("[data-category-image]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        grid.querySelectorAll("[data-category-image]").forEach((el) => {
+          el.classList.remove("is-selected");
+          el.setAttribute("aria-pressed", "false");
+        });
+        btn.classList.add("is-selected");
+        btn.setAttribute("aria-pressed", "true");
+        const hidden = root.querySelector("#ap-image-url");
+        if (hidden) hidden.value = btn.dataset.categoryImage || "";
+      });
+    });
+
+    syncCategoryImageSelection(root, category, currentSelected);
+  }
+
+  function bindImageFields(root) {
+    const categoryPanel = root.querySelector("#ap-category-image-panel");
+    const uploadPanel = root.querySelector("#ap-upload-panel");
     const input = root.querySelector("#ap-image-file");
     const preview = root.querySelector("#ap-image-preview");
     const nameEl = root.querySelector("#ap-image-name");
-    if (!input || !preview) return;
+    const categorySelect = root.querySelector("#ap-category");
 
-    input.addEventListener("change", () => {
+    root.querySelectorAll('[name="ap-image-mode"]').forEach((radio) => {
+      radio.addEventListener("change", () => {
+        const mode = getImageMode(root);
+        categoryPanel?.classList.toggle("is-hidden", mode !== "category");
+        uploadPanel?.classList.toggle("is-hidden", mode !== "upload");
+
+        if (mode === "category") {
+          syncCategoryImageSelection(root, categorySelect?.value || "other");
+        } else if (mode === "auto") {
+          const hidden = root.querySelector("#ap-image-url");
+          if (hidden) hidden.value = "";
+        } else if (mode === "upload") {
+          const hidden = root.querySelector("#ap-image-url");
+          const current = preview?.dataset.current || hidden?.value || "";
+          if (hidden) hidden.value = current;
+          if (preview) {
+            preview.src = current;
+            preview.classList.toggle("is-hidden", !current);
+          }
+          if (nameEl) nameEl.textContent = current ? "現在の画像を使用中" : "未選択";
+        }
+      });
+    });
+
+    categorySelect?.addEventListener("change", () => {
+      const mode = getImageMode(root);
+      if (mode === "category" || mode === "auto") {
+        refreshCategoryImageGrid(root);
+      }
+    });
+
+    root.querySelector("#ap-category-image-grid")?.querySelectorAll("[data-category-image]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        root.querySelectorAll("[data-category-image]").forEach((el) => {
+          el.classList.remove("is-selected");
+          el.setAttribute("aria-pressed", "false");
+        });
+        btn.classList.add("is-selected");
+        btn.setAttribute("aria-pressed", "true");
+        const hidden = root.querySelector("#ap-image-url");
+        if (hidden) hidden.value = btn.dataset.categoryImage || "";
+      });
+    });
+
+    input?.addEventListener("change", () => {
       const file = input.files?.[0];
+      const hidden = root.querySelector("#ap-image-url");
       if (!file) {
-        const current = preview.dataset.current || "";
-        preview.src = current;
-        preview.classList.toggle("is-hidden", !current);
-        nameEl.textContent = current ? "現在の画像を使用中" : "未選択";
+        const current = preview?.dataset.current || "";
+        if (preview) {
+          preview.src = current;
+          preview.classList.toggle("is-hidden", !current);
+        }
+        if (nameEl) nameEl.textContent = current ? "現在の画像を使用中" : "未選択";
+        if (hidden) hidden.value = current;
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
@@ -340,10 +514,27 @@
         input.value = "";
         return;
       }
-      nameEl.textContent = file.name;
-      preview.src = URL.createObjectURL(file);
-      preview.classList.remove("is-hidden");
+      if (nameEl) nameEl.textContent = file.name;
+      if (preview) {
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove("is-hidden");
+      }
+      if (hidden) hidden.value = "";
     });
+  }
+
+  function resolveSubmittedImageUrl(root, data, uploadedUrl) {
+    if (uploadedUrl) return uploadedUrl;
+
+    const mode = getImageMode(root);
+    if (mode === "auto") return "";
+
+    const hiddenValue = root.querySelector("#ap-image-url")?.value.trim() || "";
+    if (mode === "category") {
+      return hiddenValue || resolveSelectedCategoryImageUrl(data.category) || "";
+    }
+
+    return hiddenValue;
   }
 
   function collectFormData() {
@@ -393,9 +584,11 @@
         const productId =
           editingId && !editingIsStatic ? editingId : editingId || api.generateProductId();
 
+        let uploadedUrl = "";
         if (imageFile) {
-          data.imageUrl = (await api.uploadProductImage(imageFile, productId)) || data.imageUrl;
+          uploadedUrl = (await api.uploadProductImage(imageFile, productId)) || "";
         }
+        data.imageUrl = resolveSubmittedImageUrl(root, data, uploadedUrl);
 
         if (editingId && !editingIsStatic) {
           await api.updateProduct(editingId, data);

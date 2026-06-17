@@ -75,6 +75,20 @@ function getCategoryImageUrl(category) {
   return CATEGORY_IMAGE_FILES[fallbackKey] || "";
 }
 
+/** 管理画面用: 選択可能なカテゴリ画像一覧 */
+function getCategoryImageOptions() {
+  if (typeof CATEGORIES === "undefined") return [];
+  return CATEGORIES.map((c) => ({
+    category: c.value,
+    label: c.label,
+    url: getCategoryImageUrl(c.value),
+  })).filter((item) => item.url);
+}
+
+function isCategoryImagePath(url) {
+  return String(url || "").startsWith("images/categories/");
+}
+
 const SITE_STATS = {
   serviceCount: 0,
   reviewCount: 0,

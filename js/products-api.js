@@ -56,6 +56,7 @@
       price: Number(row.price) || 0,
       platform: row.platform || "オンライン",
       imageUrl: resolveProductImageUrl(row),
+      imageUrlRaw: row.image_url || null,
       description: row.description || "",
       averageRating: Number(row.average_rating) || 0,
       reviewCount: Number(row.review_count) || 0,
