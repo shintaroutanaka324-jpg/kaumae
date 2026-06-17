@@ -4,12 +4,11 @@
     { id: "services", label: "登録管理", href: "admin-services.html", icon: "box" },
     { id: "reviews", label: "口コミ管理", href: "admin.html", icon: "message" },
     { id: "inquiries", label: "お問い合わせ一覧", href: "admin-inquiries.html", icon: "mail" },
-    { id: "users", label: "ユーザー管理", href: "admin-users.html", soon: true },
+    { id: "users", label: "ユーザー管理", href: "admin-users.html", icon: "users" },
     { id: "proofs", label: "購入証明管理", href: "admin.html?tab=pending", icon: "shield" },
     { id: "categories", label: "カテゴリ管理", href: "admin-services.html#categories", soon: true },
     { id: "reports", label: "レポート", href: "admin-dashboard.html#reports", soon: true },
     { id: "settings", label: "設定", href: "account-settings.html", soon: true },
-    { id: "withdrawals", label: "退会ユーザー", href: "admin-withdrawals.html", icon: "users", adminOnly: true },
   ];
 
   const ICONS = {

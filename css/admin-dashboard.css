@@ -1399,3 +1399,104 @@
     padding: 1rem;
   }
 }
+
+.adm-users-kpis {
+  margin-bottom: 1rem;
+}
+
+.adm-users-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.adm-users-tab {
+  padding: 0.55rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.adm-users-tab:hover {
+  border-color: #10b981;
+  color: #047857;
+}
+
+.adm-users-tab.is-active {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #047857;
+}
+
+.adm-users-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.adm-users-sub {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.adm-users-id {
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+.adm-users-note {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.adm-sub-status {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.adm-sub-status.is-active {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.adm-sub-status.is-inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.adm-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.adm-badge--ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.adm-badge--admin {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.adm-row-actions--wrap {
+  flex-wrap: wrap;
+}
+
+.adm-panel--nested {
+  margin-top: 1rem;
+}
+
