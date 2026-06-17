@@ -1,7 +1,4 @@
-const SEARCH_HINTS = [
-  "🔍 サービス名・講師名・スクール名で検索できます",
-  "例：○○コーチ / ○○スクール / ○○塾",
-];
+const SEARCH_HINTS = ["例：○○コーチ / ○○スクール / ○○塾"];
 
 const HOME_REVIEWS_DISPLAY = 3;
 
