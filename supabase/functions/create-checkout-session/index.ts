@@ -27,17 +27,6 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (isPlaceholder(stripeSecret) || isPlaceholder(priceId)) {
-      return new Response(
-        JSON.stringify({
-          error: "Stripe is not configured yet",
-          demo: true,
-          message: "Supabase Secrets に STRIPE_SECRET_KEY と STRIPE_PRICE_ID を設定してください",
-        }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "ログインが必要です" }), {
@@ -60,6 +49,17 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (isPlaceholder(stripeSecret) || isPlaceholder(priceId)) {
+      return new Response(
+        JSON.stringify({
+          error: "Stripe is not configured yet",
+          demo: true,
+          message: "Supabase Secrets に STRIPE_SECRET_KEY と STRIPE_PRICE_ID を設定してください",
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const body = await req.json().catch(() => ({}));

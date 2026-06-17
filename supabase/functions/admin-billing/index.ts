@@ -98,6 +98,9 @@ serve(async (req) => {
   }
 
   try {
+    const verified = await verifyAdmin(req.headers.get("Authorization"));
+    if ("error" in verified && verified.error) return verified.error;
+
     const stripeSecret = Deno.env.get("STRIPE_SECRET_KEY");
     if (isPlaceholder(stripeSecret)) {
       return jsonResponse(
@@ -109,9 +112,6 @@ serve(async (req) => {
         503
       );
     }
-
-    const verified = await verifyAdmin(req.headers.get("Authorization"));
-    if ("error" in verified && verified.error) return verified.error;
 
     const { supabaseAdmin } = verified;
     const body = await req.json().catch(() => ({}));

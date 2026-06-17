@@ -19,9 +19,10 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
-create policy "profiles_select_public"
+-- 本人のみ閲覧（運営者・課金保護は schema-security-hardening.sql を必ず実行）
+create policy "profiles_select_own"
   on public.profiles for select
-  using (true);
+  using (auth.uid() = id);
 
 create policy "profiles_insert_own"
   on public.profiles for insert
