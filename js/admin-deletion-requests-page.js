@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (!Auth.isLoggedIn()) {
-      window.location.href = "login.html?redirect=admin-users.html";
+      window.location.href = "login.html?redirect=admin-deletion-requests.html";
       return;
     }
 
@@ -25,16 +25,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const root = await AdminShell.mount(app, {
-      active: "users",
-      pageTitle: "ユーザー管理",
-      pageSubtitle: "登録ユーザー・サブスクリプション・退会記録を一元管理",
-      searchPlaceholder: "メール・名前・IDで検索...",
-      onSearch: (q) => AdminUsers.setSearchQuery(q),
+      active: "deletions",
+      pageTitle: "削除依頼管理",
+      pageSubtitle: "権利侵害・削除依頼の確認と対応",
     });
 
-    await AdminUsers.mount(root, { onSearch: true });
+    root.innerHTML = `
+      <section class="adm-panel adm-panel--full" aria-labelledby="adm-deletion-title">
+        <div class="adm-panel-head">
+          <h2 class="adm-panel-title" id="adm-deletion-title">削除依頼</h2>
+          <span class="adm-inquiries-badge" id="adm-deletion-new-count">—</span>
+        </div>
+        <div class="adm-panel-body" id="adm-deletion-root"></div>
+      </section>`;
+
+    await AdminDeletionRequests.mount(document.getElementById("adm-deletion-root"));
   } catch (err) {
-    console.error("[カウマエ] ユーザー管理", err);
+    console.error("[カウマエ] 削除依頼管理", err);
     app.innerHTML = `<div class="adm-empty-state" style="padding:4rem">${App.escapeHtml(err.message || "読み込みに失敗しました")}</div>`;
   }
 });

@@ -61,7 +61,7 @@
     return data || [];
   }
 
-  async function callAdminBilling({ action, userId, atPeriodEnd, returnUrl }) {
+  async function callAdminFunction(functionName, body) {
     ensureAdmin();
     const config = window.SUPABASE_CONFIG || {};
     const baseUrl = config.url?.replace(/\/$/, "");
@@ -70,25 +70,14 @@
     }
 
     const token = await getAccessToken();
-    const siteBase =
-      typeof window.Auth?.getSiteBaseUrl === "function"
-        ? window.Auth.getSiteBaseUrl()
-        : `${window.location.origin}/`;
-
-    const response = await fetch(`${baseUrl}/functions/v1/admin-billing`, {
+    const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         apikey: config.anonKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        action,
-        userId,
-        atPeriodEnd,
-        siteUrl: siteBase,
-        returnUrl: returnUrl || `${siteBase}admin-users.html?tab=subscriptions`,
-      }),
+      body: JSON.stringify(body),
     });
 
     const payload = await response.json().catch(() => ({}));
@@ -96,6 +85,29 @@
       throw new Error(payload.error || payload.message || "管理操作に失敗しました");
     }
     return payload;
+  }
+
+  async function callAdminBilling({ action, userId, atPeriodEnd, returnUrl }) {
+    const siteBase =
+      typeof window.Auth?.getSiteBaseUrl === "function"
+        ? window.Auth.getSiteBaseUrl()
+        : `${window.location.origin}/`;
+
+    return callAdminFunction("admin-billing", {
+      action,
+      userId,
+      atPeriodEnd,
+      siteUrl: siteBase,
+      returnUrl: returnUrl || `${siteBase}admin-users.html?tab=subscriptions`,
+    });
+  }
+
+  async function setUserAdminRole(userId, isAdmin) {
+    return callAdminFunction("admin-users", {
+      action: "setAdmin",
+      userId,
+      isAdmin: Boolean(isAdmin),
+    });
   }
 
   function subscriptionStatusLabel(status) {
@@ -111,12 +123,32 @@
     return Boolean(profile?.is_paid || profile?.is_paid_member);
   }
 
+  function computeSummary(profiles, withdrawnRows = []) {
+    const list = Array.isArray(profiles) ? profiles : [];
+    const withdrawn = Array.isArray(withdrawnRows) ? withdrawnRows : [];
+    return {
+      total: list.length,
+      paid: list.filter((p) => isActiveSubscription(p)).length,
+      posted: list.filter((p) => p.has_posted_review).length,
+      withdrawn: withdrawn.length,
+    };
+  }
+
+  function getRecentProfiles(profiles, limit = 5) {
+    return [...(profiles || [])]
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .slice(0, limit);
+  }
+
   window.AdminUsersApi = {
     loadProfilesAdmin,
     loadWithdrawnUsersAdmin,
     loadWithdrawalAuditLogsAdmin,
     callAdminBilling,
+    setUserAdminRole,
     subscriptionStatusLabel,
     isActiveSubscription,
+    computeSummary,
+    getRecentProfiles,
   };
 })();

@@ -185,8 +185,10 @@
             const published = isProductPublished(p);
             const pvInfo = S.getProductPvStats(pvStats, p.id);
             const pv = pvInfo.monthlyPv || 0;
-            const rating = p.averageRating || 0;
-            const reviews = p.reviewCount || 0;
+            const stats =
+              typeof getProductDisplayStats === "function" ? getProductDisplayStats(p) : null;
+            const rating = stats?.rating ?? p.averageRating ?? 0;
+            const reviews = stats?.displayCount ?? p.reviewCount ?? 0;
             const regDate = p.created_at
               ? new Date(p.created_at).toLocaleDateString("ja-JP")
               : p.source === "static"

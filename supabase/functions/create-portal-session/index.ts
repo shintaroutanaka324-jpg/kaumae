@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { normalizeSiteBase, sanitizeSiteRedirectUrl } from "../_shared/safe-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -61,9 +62,11 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const siteUrl = (body.siteUrl as string) || "https://www.kaumae-info.com/";
-    const base = siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`;
-    const returnUrl = (body.returnUrl as string) || `${base}account-settings.html?billing=return`;
+    const base = normalizeSiteBase(body.siteUrl);
+    const returnUrl = sanitizeSiteRedirectUrl(
+      body.returnUrl,
+      `${base}account-settings.html?billing=return`
+    );
 
     const supabaseAdmin = createClient(supabaseUrl!, serviceRoleKey!);
     const { data: profile, error: profileError } = await supabaseAdmin

@@ -112,18 +112,44 @@
   <div id="site-footer"></div>
 
   <script src="js/data.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/deletion-request-api.js"></script>
   <script src="js/app.js?v=20260613adminmenu"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+      await App.whenReady();
+
       App.renderBreadcrumb([
         { label: "トップ", path: "index.html" },
         { label: "削除依頼" },
       ]);
 
-      document.getElementById("deletion-form").addEventListener("submit", (e) => {
+      const form = document.getElementById("deletion-form");
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        App.showToast("削除依頼を送信しました。内容確認後、順次対応いたします。");
-        e.target.reset();
+        submitBtn.disabled = true;
+        const original = submitBtn.textContent;
+        submitBtn.textContent = "送信中...";
+
+        try {
+          await DeletionRequestApi.submitDeletionRequest({
+            name: document.getElementById("name").value,
+            email: document.getElementById("email").value,
+            targetUrl: document.getElementById("url").value,
+            requestType: document.getElementById("type").value,
+            message: document.getElementById("message").value,
+          });
+          App.showToast("削除依頼を送信しました。内容確認後、順次対応いたします。");
+          form.reset();
+        } catch (err) {
+          App.showToast(err.message || "送信に失敗しました", "error");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = original;
+        }
       });
     });
   </script>

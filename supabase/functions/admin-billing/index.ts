@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { normalizeSiteBase, sanitizeSiteRedirectUrl } from "../_shared/safe-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -211,9 +212,11 @@ serve(async (req) => {
         return jsonResponse({ error: "Stripe 顧客 ID がありません" }, 400);
       }
 
-      const siteUrl = String(body.siteUrl || "https://www.kaumae-info.com/");
-      const base = siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`;
-      const returnUrl = String(body.returnUrl || `${base}admin-users.html?tab=subscriptions`);
+      const base = normalizeSiteBase(body.siteUrl);
+      const returnUrl = sanitizeSiteRedirectUrl(
+        body.returnUrl,
+        `${base}admin-users.html?tab=subscriptions`
+      );
 
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,

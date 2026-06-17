@@ -4,6 +4,7 @@
     { id: "services", label: "登録管理", href: "admin-services.html", icon: "box" },
     { id: "reviews", label: "口コミ管理", href: "admin.html", icon: "message" },
     { id: "inquiries", label: "お問い合わせ一覧", href: "admin-inquiries.html", icon: "mail" },
+    { id: "deletions", label: "削除依頼", href: "admin-deletion-requests.html", icon: "flag" },
     { id: "users", label: "ユーザー管理", href: "admin-users.html", icon: "users" },
     { id: "proofs", label: "購入証明管理", href: "admin.html?tab=pending", icon: "shield" },
     { id: "categories", label: "カテゴリ管理", href: "admin-services.html#categories", soon: true },
@@ -18,6 +19,7 @@
     shield: '<svg class="adm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
     users: '<svg class="adm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     mail: '<svg class="adm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+    flag: '<svg class="adm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
   };
 
   function navIcon(name) {

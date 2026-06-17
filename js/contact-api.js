@@ -34,6 +34,14 @@
     return STATUS_LABELS[value] || value || "—";
   }
 
+  function formatRateLimitError(error) {
+    const msg = error?.message || "";
+    if (msg.includes("rate_limit_exceeded") || msg.includes("rate_limit")) {
+      return "送信回数が上限に達しました。1時間ほど待ってから再度お試しください。";
+    }
+    return msg || "送信に失敗しました";
+  }
+
   async function submitInquiry({ name, email, subject, message }) {
     const client = ensureConfigured();
     const payload = {
@@ -49,7 +57,7 @@
     if (!payload.message) throw new Error("お問い合わせ内容を入力してください");
 
     const { error } = await client.from("contact_inquiries").insert(payload);
-    if (error) throw new Error(error.message || "送信に失敗しました");
+    if (error) throw new Error(formatRateLimitError(error));
   }
 
   async function fetchInquiries({ limit = 100 } = {}) {

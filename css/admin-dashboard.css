@@ -816,6 +816,48 @@
   color: #047857;
 }
 
+.adm-inquiry-status.is-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.adm-deletion-filters {
+  margin-bottom: 0.85rem;
+}
+
+.adm-deletion-url {
+  color: #2563eb;
+  word-break: break-all;
+}
+
+.adm-deletion-url-cell {
+  max-width: 220px;
+}
+
+.adm-deletion-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.adm-deletion-detail-meta dt {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.adm-deletion-detail-meta dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.adm-deletion-table td {
+  vertical-align: top;
+}
+
 .adm-inquiry-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1498,5 +1540,99 @@
 
 .adm-panel--nested {
   margin-top: 1rem;
+}
+
+.adm-users-filters {
+  margin-bottom: 0.85rem;
+}
+
+.adm-users-detail-row.hidden {
+  display: none;
+}
+
+.adm-users-detail-row td {
+  background: #f8fafc;
+  padding: 0 !important;
+}
+
+.adm-users-detail-body {
+  padding: 1rem 1.25rem;
+}
+
+.adm-users-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.adm-users-detail-grid dt {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.adm-users-detail-grid dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+  color: #111827;
+  word-break: break-all;
+}
+
+.adm-users-detail-actions {
+  margin-top: 0.25rem;
+}
+
+.adm-users-dash-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.adm-users-dash-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.adm-users-dash-stats strong {
+  color: #111827;
+  font-size: 1.125rem;
+  margin-left: 0.25rem;
+}
+
+.adm-users-dash-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.adm-table--compact th,
+.adm-table--compact td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.adm-btn-ghost.is-danger {
+  color: #b91c1c;
+}
+
+.adm-btn-ghost.is-danger:hover {
+  background: #fef2f2;
+}
+
+.adm-admin-role-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adm-admin-role-cell .adm-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 

@@ -1,0 +1,3 @@
+-- 運営権限（is_admin）の保護
+-- ※ 本ファイルの内容は schema-security-hardening.sql に統合済みです。
+-- 新規環境では schema-security-hardening.sql を実行してください。

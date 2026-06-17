@@ -18,9 +18,15 @@
   <script src="js/reviews-api.js"></script>
   <script src="js/app.js?v=20260613adminmenu"></script>
   <script src="js/contact-api.js"></script>
+  <script src="js/deletion-request-api.js"></script>
   <script src="js/admin-inquiries.js"></script>
+  <script src="js/admin-deletion-requests.js"></script>
   <script src="js/admin-dashboard-stats.js"></script>
   <script src="js/product-pv-api.js"></script>
+  <script src="js/billing-api.js"></script>
+  <script src="js/account-api.js"></script>
+  <script src="js/admin-users-api.js"></script>
+  <script src="js/admin-users.js?v=20260618adminrole"></script>
   <script src="js/admin-pending-count.js"></script>
   <script src="js/admin-shell.js"></script>
   <script>
@@ -91,6 +97,7 @@
               <a href="admin-users.html?tab=subscriptions" class="adm-quick-btn">サブスク管理</a>
               <a href="admin-users.html?tab=withdrawals" class="adm-quick-btn">退会ユーザー</a>
               <a href="admin-inquiries.html" class="adm-quick-btn">お問い合わせ一覧</a>
+              <a href="admin-deletion-requests.html" class="adm-quick-btn">削除依頼管理</a>
             </div>
           </div>
           <div class="adm-aside">
@@ -109,6 +116,21 @@
             </div>
           </div>
         </div>
+        <section class="adm-panel adm-panel--full" id="adm-users-section" aria-labelledby="adm-users-title">
+          <div class="adm-panel-head">
+            <h3 class="adm-panel-title" id="adm-users-title">ユーザー管理</h3>
+            <a href="admin-users.html" class="adm-btn-ghost">すべて見る</a>
+          </div>
+          <div class="adm-panel-body" id="adm-users-root"></div>
+        </section>
+        <section class="adm-panel adm-panel--full" id="adm-deletion-section" aria-labelledby="adm-deletion-dash-title">
+          <div class="adm-panel-head">
+            <h3 class="adm-panel-title" id="adm-deletion-dash-title">削除依頼</h3>
+            <span class="adm-inquiries-badge" id="adm-deletion-dash-count">—</span>
+            <a href="admin-deletion-requests.html" class="adm-btn-ghost">すべて見る</a>
+          </div>
+          <div class="adm-panel-body" id="adm-deletion-dash-root"></div>
+        </section>
         <section class="adm-panel adm-panel--full" id="adm-inquiries-section" aria-labelledby="adm-inquiries-title">
           <div class="adm-panel-head">
             <h3 class="adm-panel-title" id="adm-inquiries-title">お問い合わせ</h3>
@@ -117,6 +139,8 @@
           <div class="adm-panel-body" id="adm-inquiries-root"></div>
         </section>`;
 
+      await AdminUsers.mountDashboardPreview(document.getElementById("adm-users-root"));
+      await AdminDeletionRequests.mount(document.getElementById("adm-deletion-dash-root"));
       await AdminInquiries.mount(document.getElementById("adm-inquiries-root"));
     });
   </script>

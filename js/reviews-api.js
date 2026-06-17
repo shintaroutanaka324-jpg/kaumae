@@ -148,6 +148,7 @@
     ];
     const rating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
     const dateSource = row.published_at || row.created_at;
+    const bodyPros = row.body_pros || row.body_preview || "";
 
     return {
       id: `db-${row.id}`,
@@ -159,16 +160,16 @@
       rating,
       date: dateSource.split("T")[0],
       verifiedPurchase: resolveShowPurchaseProof(row),
-      title: row.body_pros.slice(0, 40) + (row.body_pros.length > 40 ? "…" : ""),
-      content: row.body_pros,
+      title: bodyPros.slice(0, 40) + (bodyPros.length > 40 ? "…" : ""),
+      content: bodyPros,
       purchasePrice: row.purchase_price,
-      pros: [row.body_pros],
-      cons: [row.body_concerns],
-      learned: row.body_results || row.body_learnings,
+      pros: [bodyPros],
+      cons: row.body_concerns ? [row.body_concerns] : [],
+      learned: row.body_results || row.body_learnings || "",
       situation: readBodyBefore(row),
       numericResult: readNumericResults(row),
-      recommendFor: row.body_recommend,
-      bodyOther: row.body_other,
+      recommendFor: row.body_recommend || "",
+      bodyOther: row.body_other || "",
       contentSatisfaction: Number(row.content_satisfaction),
       resultRealization: Number(row.result_realization),
       supportQuality: Number(row.support_quality),
@@ -180,11 +181,28 @@
       purchaseMonth: row.purchase_month || null,
       _dbId: row.id,
       _fromDb: true,
+      _previewOnly: Boolean(row._previewOnly),
     };
   }
 
-  function applyApprovedCache(rows) {
-    approvedCache = rows.map(rowToLegacyReview);
+  function rowToLegacyReviewPreview(row) {
+    const preview = String(row.body_preview || "").trim();
+    return rowToLegacyReview({
+      ...row,
+      body_pros: preview,
+      body_concerns: "",
+      body_results: "",
+      body_recommend: "",
+      body_before: "",
+      body_situation: "",
+      body_other: "",
+      _previewOnly: true,
+    });
+  }
+
+  function applyApprovedCache(rows, { previewMode = false } = {}) {
+    const mapper = previewMode ? rowToLegacyReviewPreview : rowToLegacyReview;
+    approvedCache = rows.map(mapper);
     if (typeof setApprovedDbReviews === "function") {
       setApprovedDbReviews(approvedCache);
     }
@@ -201,19 +219,52 @@
     const client = getClient();
     if (!client) return [];
 
-    let result = await client
-      .from("submitted_reviews")
-      .select("*")
-      .eq("status", "approved")
-      .eq("is_published", true)
-      .order("published_at", { ascending: false });
+    const fullAccess = await canViewFullReview();
+    let result;
+    let previewMode = false;
 
-    if (result.error && isMissingPublishedColumnError(result.error)) {
+    if (fullAccess) {
       result = await client
         .from("submitted_reviews")
         .select("*")
         .eq("status", "approved")
+        .eq("is_published", true)
         .order("published_at", { ascending: false });
+
+      if (result.error && isMissingPublishedColumnError(result.error)) {
+        result = await client
+          .from("submitted_reviews")
+          .select("*")
+          .eq("status", "approved")
+          .order("published_at", { ascending: false });
+      }
+    } else {
+      previewMode = true;
+      result = await client
+        .from("approved_reviews_preview")
+        .select("*")
+        .order("published_at", { ascending: false });
+
+      if (result.error?.message?.includes("approved_reviews_preview")) {
+        console.warn(
+          "[カウマエ] プレビュー view 未作成: supabase/schema-security-hardening.sql を実行してください"
+        );
+        previewMode = false;
+        result = await client
+          .from("submitted_reviews")
+          .select("*")
+          .eq("status", "approved")
+          .eq("is_published", true)
+          .order("published_at", { ascending: false });
+
+        if (result.error && isMissingPublishedColumnError(result.error)) {
+          result = await client
+            .from("submitted_reviews")
+            .select("*")
+            .eq("status", "approved")
+            .order("published_at", { ascending: false });
+        }
+      }
     }
 
     if (result.error) {
@@ -221,9 +272,9 @@
       return approvedCache;
     }
 
-    const published = (result.data || []).filter(isReviewPublished);
-    const enriched = await enrichReviewRowsWithProfiles(published);
-    applyApprovedCache(enriched);
+    const published = previewMode ? result.data || [] : (result.data || []).filter(isReviewPublished);
+    const enriched = previewMode ? published : await enrichReviewRowsWithProfiles(published);
+    applyApprovedCache(enriched, { previewMode });
     return approvedCache;
   }
 
@@ -280,6 +331,10 @@
     if (window.Auth.refreshProfile) {
       await window.Auth.refreshProfile();
     }
+    if (window.Auth.isAdmin?.()) {
+      localStorage.setItem("reviewsUnlocked", "true");
+      return true;
+    }
     if (window.Auth.isPaidMember?.()) {
       localStorage.setItem("reviewsUnlocked", "true");
       return true;
@@ -299,14 +354,15 @@
 
   async function getReviewAccessState() {
     const loggedIn = window.Auth?.isLoggedIn?.() ?? false;
+    const isAdmin = window.Auth?.isAdmin?.() ?? false;
     const isPaidMember = window.Auth?.isPaidMember?.() ?? false;
     let hasPostedReview = window.Auth?.hasPostedReview?.() ?? false;
 
-    if (loggedIn && !hasPostedReview && !isPaidMember) {
+    if (loggedIn && !hasPostedReview && !isPaidMember && !isAdmin) {
       hasPostedReview = await userHasReadUnlock();
     }
 
-    const canViewFull = loggedIn && (isPaidMember || hasPostedReview);
+    const canViewFull = loggedIn && (isAdmin || isPaidMember || hasPostedReview);
 
     if (canViewFull) {
       localStorage.setItem("reviewsUnlocked", "true");
