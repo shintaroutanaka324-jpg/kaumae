@@ -662,7 +662,9 @@ function getLockedBodyText(text, skipHead = false) {
   const raw = String(text || "（記載なし）");
   if (!skipHead) return raw;
   const chars = [...raw];
-  return chars.length > PREVIEW_CHAR_LIMIT ? chars.slice(PREVIEW_CHAR_LIMIT).join("") : raw;
+  const remainder = chars.length > PREVIEW_CHAR_LIMIT ? chars.slice(PREVIEW_CHAR_LIMIT).join("") : "";
+  if (remainder.trim()) return remainder;
+  return raw.repeat(6);
 }
 
 function renderLockedBody(text, { skipHead = false } = {}) {
@@ -725,13 +727,12 @@ function renderLockableContent(text, unlocked, { showCta = true, className = "pd
   }
 
   const preview = App.escapeHtml(truncatePreview(raw));
-  const hasPreview = hasMoreThanPreview(raw);
 
   return `
     <div class="pd2-paywall">
-      ${hasPreview ? `<p class="pd2-paywall-preview">${preview}</p>` : ""}
-      <div class="pd2-paywall-locked${hasPreview ? "" : " pd2-paywall-locked--solo"}">
-        ${renderLockedBody(raw, { skipHead: hasPreview })}
+      <p class="pd2-paywall-preview">${preview}</p>
+      <div class="pd2-paywall-locked">
+        ${renderLockedBody(raw, { skipHead: true })}
         ${renderPaywallCta(showCta)}
       </div>
     </div>`;
