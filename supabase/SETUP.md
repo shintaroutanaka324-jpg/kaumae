@@ -99,6 +99,23 @@ http://localhost:5500/kaumae/**
 SQL Editor で `supabase/schema-email-check.sql` を実行してください。  
 登録済みメールで新規登録しようとしたときに、正しくエラーを表示できます。
 
+## 5b. ログイン失敗ロック（5回で24時間ロック）
+
+SQL Editor で `supabase/schema-login-lockout.sql` を実行してください。  
+同一メールアドレスでパスワードを5回連続で間違えると、24時間ログインがロックされます。ログイン成功時、またはパスワード変更成功時にロックは解除されます。
+
+### ログイン失敗通知メール
+
+Edge Function `notify-login-failure` をデプロイし、Secrets に以下を設定してください。
+
+| Secret | 説明 |
+|--------|------|
+| `RESEND_API_KEY` | [Resend](https://resend.com) の API キー |
+| `MAIL_FROM` | 送信元（例: `カウマエ <noreply@kaumae-info.com>`） |
+| `SITE_URL` | サイトURL（例: `https://www.kaumae-info.com/`） |
+
+登録済みメールアドレスでパスワード入力に失敗するたび、本人宛に通知メールが送信されます。`RESEND_API_KEY` 未設定時はログイン処理は継続し、メールのみスキップされます。
+
 ## 6. サービス管理のセットアップ
 
 1. SQL Editor で `supabase/schema-products.sql` を実行

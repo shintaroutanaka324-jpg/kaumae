@@ -344,6 +344,107 @@
   const WITHDRAWN_ACCOUNT_MESSAGE =
     "このアカウントは退会済みです。再度利用する場合は新規登録を行ってください。";
 
+  const MAX_LOGIN_ATTEMPTS = 5;
+  const LOGIN_LOCKOUT_HOURS = 24;
+
+  function formatLockoutUntil(lockedUntil) {
+    if (!lockedUntil) return "";
+    const date = new Date(lockedUntil);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("ja-JP", {
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  function buildLoginLockoutMessage(status) {
+    const untilText = formatLockoutUntil(status?.locked_until);
+    if (untilText) {
+      return `ログイン試行回数が${MAX_LOGIN_ATTEMPTS}回に達したため、アカウントを一時的にロックしました。${untilText}以降に再度お試しください。`;
+    }
+    return `ログイン試行回数が${MAX_LOGIN_ATTEMPTS}回に達したため、アカウントを一時的にロックしました。${LOGIN_LOCKOUT_HOURS}時間後に再度お試しください。`;
+  }
+
+  function buildLoginFailureMessage(status) {
+    if (status?.locked) {
+      return buildLoginLockoutMessage(status);
+    }
+    const remaining = Number(status?.attempts_remaining);
+    if (Number.isFinite(remaining) && remaining > 0 && remaining < MAX_LOGIN_ATTEMPTS) {
+      return `メールアドレスまたはパスワードが正しくありません。あと${remaining}回でアカウントがロックされます。`;
+    }
+    return "メールアドレスまたはパスワードが正しくありません";
+  }
+
+  async function getLoginLockoutStatus(email) {
+    const supabase = ensureClient();
+    const { data, error } = await supabase.rpc("get_login_lockout_status", {
+      check_email: email.trim(),
+    });
+    if (error) {
+      console.warn("[カウマエ] ログインロック確認エラー", error.message);
+      return null;
+    }
+    return data;
+  }
+
+  async function recordLoginFailure(email) {
+    const supabase = ensureClient();
+    const { data, error } = await supabase.rpc("record_login_failure", {
+      check_email: email.trim(),
+    });
+    if (error) {
+      console.warn("[カウマエ] ログイン失敗記録エラー", error.message);
+      return null;
+    }
+    return data;
+  }
+
+  async function clearLoginLockout(email) {
+    const supabase = ensureClient();
+    const { error } = await supabase.rpc("clear_login_lockout", {
+      check_email: email.trim(),
+    });
+    if (error) {
+      console.warn("[カウマエ] ログインロック解除エラー", error.message);
+    }
+  }
+
+  async function notifyLoginFailure(email, failureStatus) {
+    const { url, anonKey } = getConfig();
+    if (!url || !anonKey) return;
+
+    const endpoint = `${url.replace(/\/$/, "")}/functions/v1/notify-login-failure`;
+
+    try {
+      await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          failedAttempts: failureStatus?.failed_attempts ?? null,
+          locked: failureStatus?.locked === true,
+          lockedUntil: failureStatus?.locked_until ?? null,
+        }),
+      });
+    } catch (err) {
+      console.warn("[カウマエ] ログイン失敗通知メール送信エラー", err);
+    }
+  }
+
+  async function assertLoginNotLocked(email) {
+    const status = await getLoginLockoutStatus(email);
+    if (status?.locked) {
+      throw new Error(buildLoginLockoutMessage(status));
+    }
+  }
+
   async function isWithdrawnEmail(email) {
     const normalized = email.trim();
     if (!normalized || !client) return false;
@@ -366,11 +467,28 @@
       throw new Error(WITHDRAWN_ACCOUNT_MESSAGE);
     }
 
+    await assertLoginNotLocked(trimmedEmail);
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
       password,
     });
-    if (error) throw new Error(mapAuthError(error));
+
+    if (error) {
+      const isInvalidCredentials =
+        (error.message || "").includes("Invalid login credentials") ||
+        error.code === "invalid_credentials";
+
+      if (isInvalidCredentials) {
+        const failureStatus = await recordLoginFailure(trimmedEmail);
+        void notifyLoginFailure(trimmedEmail, failureStatus);
+        throw new Error(buildLoginFailureMessage(failureStatus));
+      }
+
+      throw new Error(mapAuthError(error));
+    }
+
+    await clearLoginLockout(trimmedEmail);
 
     session = data.session;
     if (session?.user) {
@@ -400,6 +518,10 @@
     const supabase = ensureClient();
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw new Error(mapAuthError(error));
+    const email = session?.user?.email;
+    if (email) {
+      await clearLoginLockout(email);
+    }
   }
 
   function isLoggedIn() {
@@ -577,5 +699,8 @@
     DUPLICATE_EMAIL_MESSAGE,
     WITHDRAWN_ACCOUNT_MESSAGE,
     isWithdrawnEmail,
+    MAX_LOGIN_ATTEMPTS,
+    LOGIN_LOCKOUT_HOURS,
+    getLoginLockoutStatus,
   };
 })();
