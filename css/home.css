@@ -181,12 +181,7 @@
 }
 
 .home-hero-visual-stage::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.4) 6%, transparent 14%);
+  display: none;
 }
 
 .home-hero-main-img {
@@ -197,10 +192,6 @@
   height: auto;
   object-fit: contain;
   object-position: center;
-  -webkit-mask-image:
-    radial-gradient(ellipse 94% 90% at 50% 50%, #000 65%, transparent 100%);
-  mask-image:
-    radial-gradient(ellipse 94% 90% at 50% 50%, #000 65%, transparent 100%);
 }
 
 /* --- Trust --- */
