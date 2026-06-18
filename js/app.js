@@ -250,45 +250,6 @@
     return html;
   }
 
-  function isHomeV2Page() {
-    return document.body.classList.contains("page-home-v2");
-  }
-
-  function renderHomeLogo() {
-    const img = `<img src="${SITE_LOGO.imageSrc}" alt="${escapeHtml(SITE_LOGO.alt)}" class="logo-img" width="40" height="40" />`;
-    return `${img}<span class="logo-text logo-text--home">${escapeHtml(SITE_BRAND.nameJa)}</span>`;
-  }
-
-  function renderHomeAccountNav(loggedIn, userName, userEmail, isPaid) {
-    if (loggedIn) {
-      return `
-        <div class="user-menu user-menu--home">
-          <button type="button" class="user-btn user-btn--home" id="user-menu-btn">
-            <span class="avatar">👤</span>
-            <span class="user-name">${escapeHtml(userName)}</span>
-            ${isPaid ? '<span class="member-badge">有料会員</span>' : ""}
-            <span class="user-btn-caret" aria-hidden="true">▼</span>
-          </button>
-          <div class="dropdown dropdown--account" id="user-dropdown">
-            ${userEmail ? `<p class="dropdown-email">${escapeHtml(userEmail)}</p>` : ""}
-            ${renderAccountMenuLinks()}
-            <hr>
-            <button type="button" id="logout-btn">ログアウト</button>
-          </div>
-        </div>`;
-    }
-    return `
-      <a href="login.html" class="home-header-link">ログイン</a>
-      <a href="register.html" class="btn btn-trust btn-sm home-header-cta">新規登録</a>`;
-  }
-
-  function renderHomeMobileNavLinks() {
-    return `
-      <a href="reviews.html" class="mobile-nav-link">口コミを探す</a>
-      <a href="index.html#categories" class="mobile-nav-link">カテゴリから探す</a>
-      <a href="submit-review.html" class="mobile-nav-link">口コミを投稿する</a>`;
-  }
-
   function bindHeaderListeners() {
     document.getElementById("header-search-form")?.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -323,61 +284,6 @@
     const userEmail = getUserEmail();
     const isPaid = window.Auth?.isPaidMember?.() ?? false;
     const current = getCurrentPage();
-
-    if (isHomeV2Page()) {
-      el.innerHTML = `
-        <div class="container site-chrome-inner site-chrome-inner--home">
-          <header class="site-header site-header--home">
-            <div class="header-inner header-inner--home">
-              <div class="home-header-brand">
-                <a href="index.html" class="logo logo--home">${renderHomeLogo()}</a>
-                <p class="home-header-tagline">購入前に、本音の口コミを確認する</p>
-              </div>
-              <nav class="home-header-nav" aria-label="メインナビゲーション">
-                <a href="reviews.html" class="home-header-link">口コミを探す</a>
-                <a href="index.html#categories" class="home-header-link">カテゴリから探す</a>
-                <a href="submit-review.html" class="home-header-link">口コミを投稿する</a>
-                ${renderHomeAccountNav(loggedIn, userName, userEmail, isPaid)}
-              </nav>
-              <button type="button" class="menu-toggle menu-toggle--home" id="menu-toggle" aria-label="メニュー">☰</button>
-            </div>
-          </header>
-        </div>
-        <div class="container mobile-nav mobile-nav--home" id="mobile-nav">
-          ${
-            loggedIn
-              ? `<div class="mobile-user-bar">
-                  <span class="avatar" aria-hidden="true">👤</span>
-                  <div class="mobile-user-info">
-                    <span class="user-name">${escapeHtml(userName)}</span>
-                    ${userEmail ? `<span class="user-email">${escapeHtml(userEmail)}</span>` : ""}
-                    ${isPaid ? '<span class="member-badge">有料会員</span>' : ""}
-                  </div>
-                </div>`
-              : ""
-          }
-          <div class="mobile-nav-links">
-            ${renderHomeMobileNavLinks()}
-          </div>
-          ${
-            loggedIn
-              ? `<nav class="mobile-account-links" aria-label="アカウント">
-                  ${renderMobileAccountLinks()}
-                </nav>`
-              : ""
-          }
-          <div class="mobile-nav-actions">
-          ${
-            loggedIn
-              ? `<button type="button" class="btn btn-ghost btn-block" id="mobile-logout">ログアウト</button>`
-              : `<a href="login.html" class="btn btn-ghost btn-block">ログイン</a>
-                 <a href="register.html" class="btn btn-trust btn-block">新規登録</a>`
-          }
-          </div>
-        </div>`;
-      bindHeaderListeners();
-      return;
-    }
 
     el.innerHTML = `
       <div class="container site-chrome-inner">
