@@ -4,7 +4,7 @@
   --home-green: #059669;
   --home-green-dark: #047857;
   --home-green-soft: #ecfdf5;
-  --home-bg: #f8fbfa;
+  --home-bg: #ffffff;
   --home-text: #0f172a;
   --home-muted: #64748b;
   --home-border: #e2e8f0;
@@ -37,19 +37,11 @@
   position: relative;
   overflow: hidden;
   padding: 0.5rem 0 1.15rem;
-  background: linear-gradient(135deg, #ffffff 0%, #fafcfb 42%, #f3faf7 68%, #ecfdf5 100%);
+  background: #fff;
 }
 
 .home-hero::before {
-  content: "";
-  position: absolute;
-  top: 8%;
-  right: -6%;
-  width: min(52%, 32rem);
-  height: 82%;
-  background: radial-gradient(ellipse at center, rgba(5, 150, 105, 0.1) 0%, rgba(5, 150, 105, 0.03) 50%, transparent 74%);
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 .home-hero > .container {
@@ -185,12 +177,7 @@
 }
 
 .home-hero-visual-stage::before {
-  content: "";
-  position: absolute;
-  inset: -4% -6% -4% -4%;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(ellipse 72% 68% at 54% 50%, rgba(167, 243, 208, 0.22) 0%, transparent 72%);
+  display: none;
 }
 
 .home-hero-visual-stage::after {
@@ -199,10 +186,7 @@
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.2) 8%, transparent 16%),
-    linear-gradient(270deg, rgba(236, 253, 245, 0.55) 0%, rgba(236, 253, 245, 0.15) 6%, transparent 14%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, transparent 8%, transparent 92%, rgba(236, 253, 245, 0.3) 100%);
+  background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.4) 6%, transparent 14%);
 }
 
 .home-hero-main-img {
@@ -214,9 +198,9 @@
   object-fit: contain;
   object-position: center;
   -webkit-mask-image:
-    radial-gradient(ellipse 92% 86% at 50% 50%, #000 58%, transparent 100%);
+    radial-gradient(ellipse 94% 90% at 50% 50%, #000 65%, transparent 100%);
   mask-image:
-    radial-gradient(ellipse 92% 86% at 50% 50%, #000 58%, transparent 100%);
+    radial-gradient(ellipse 94% 90% at 50% 50%, #000 65%, transparent 100%);
 }
 
 /* --- Trust --- */
@@ -630,10 +614,28 @@
   padding: 0.7rem 1.5rem;
 }
 
-/* --- Footer --- */
+/* --- Footer (トップページも共通のダークフッターを使用) --- */
 .page-home-v2 .site-footer {
-  background: #fff;
-  border-top: 1px solid var(--home-border);
+  background: #0f172a;
+  color: #94a3b8;
+  border-top: none;
+}
+
+.page-home-v2 .site-footer .footer-desc {
+  color: #94a3b8;
+}
+
+.page-home-v2 .site-footer .footer-links a {
+  color: #94a3b8;
+}
+
+.page-home-v2 .site-footer .footer-links a:hover {
+  color: #fff;
+}
+
+.page-home-v2 .site-footer .footer-bottom {
+  border-top-color: #1e293b;
+  color: #64748b;
 }
 
 /* --- Responsive --- */
